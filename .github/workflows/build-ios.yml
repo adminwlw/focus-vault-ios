@@ -30,6 +30,7 @@ jobs:
         continue-on-error: true
         run: |
           set -o pipefail
+          mkdir -p build
           xcodebuild test \
             -project FocusVault.xcodeproj \
             -scheme FocusVault \

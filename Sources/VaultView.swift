@@ -24,109 +24,54 @@ struct VaultView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if visibleItems.isEmpty {
-                    ContentUnavailableView {
-                        Label(emptyTitle, systemImage: favoritesOnly ? "heart" : "photo.on.rectangle.angled")
-                    } description: {
-                        Text(emptyDescription)
-                    } actions: {
-                        PhotosPicker(selection: $pickerItems, maxSelectionCount: 50, matching: .any(of: [.images, .videos])) {
-                            Label("导入照片或视频", systemImage: "photo.badge.plus")
-                        }
-                        .buttonStyle(.borderedProminent)
-                    }
-                } else {
-                    ScrollView {
-                        LazyVGrid(columns: columns, spacing: 2) {
-                            ForEach(visibleItems) { item in
-                                NavigationLink(value: item) {
-                                    VaultGridCell(item: item)
-                                }
-                                .buttonStyle(.plain)
-                                .contextMenu {
-                                    Button {
-                                        tryAction { try store.toggleFavorite(item) }
-                                    } label: {
-                                        Label(item.isFavorite ? "取消收藏" : "收藏", systemImage: item.isFavorite ? "heart.slash" : "heart")
-                                    }
-                                    albumMenu(for: item)
-                                    Button(role: .destructive) {
-                                        tryAction { try store.moveToTrash(item) }
-                                    } label: {
-                                        Label("移到最近删除", systemImage: "trash")
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    .background(Color(uiColor: .systemBackground))
+        presentedNavigation
+            .alert("新建相册", isPresented: newAlbumAlertBinding) {
+                TextField("相册名称", text: $newAlbumName)
+                Button("取消", role: .cancel) {
+                    albumTarget = nil
+                    newAlbumName = ""
                 }
+                Button("创建并移动") {
+                    if let item = albumTarget {
+                        tryAction { try store.assign(item, toAlbum: newAlbumName) }
+                    }
+                    albumTarget = nil
+                    newAlbumName = ""
+                }
+                .disabled(newAlbumName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
+            .alert("操作失败", isPresented: errorAlertBinding) {
+                Button("好", role: .cancel) { store.errorMessage = nil }
+            } message: {
+                Text(store.errorMessage ?? "未知错误")
+            }
+    }
+
+    private var presentedNavigation: some View {
+        navigationView
+            .sheet(isPresented: $showCamera) {
+                CameraPicker { image in
+                    tryAction { try store.importCapturedImage(image) }
+                }
+                .ignoresSafeArea()
+            }
+            .sheet(isPresented: $showTrash) {
+                RecentlyDeletedView()
+            }
+            .sheet(isPresented: $showManagement) {
+                VaultManagementView()
+            }
+    }
+
+    private var navigationView: some View {
+        NavigationStack {
+            vaultContent
             .navigationTitle(selectedAlbum ?? (favoritesOnly ? "收藏" : "私人空间"))
             .navigationBarTitleDisplayMode(.large)
             .navigationDestination(for: VaultItem.self) { item in
                 VaultDetailView(itemID: item.id)
             }
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button(action: onLock) {
-                        Label("锁定", systemImage: "lock")
-                    }
-                }
-                ToolbarItemGroup(placement: .topBarTrailing) {
-                    PhotosPicker(selection: $pickerItems, maxSelectionCount: 50, matching: .any(of: [.images, .videos])) {
-                        Image(systemName: "plus")
-                    }
-                    Menu {
-                        Button {
-                            showCamera = true
-                        } label: {
-                            Label("拍照", systemImage: "camera")
-                        }
-                        .disabled(!UIImagePickerController.isSourceTypeAvailable(.camera))
-
-                        Divider()
-                        Button {
-                            selectedAlbum = nil
-                            favoritesOnly = false
-                        } label: {
-                            Label("全部项目", systemImage: "square.grid.3x3")
-                        }
-                        Button {
-                            selectedAlbum = nil
-                            favoritesOnly = true
-                        } label: {
-                            Label("收藏", systemImage: "heart")
-                        }
-                        if !store.albums.isEmpty {
-                            Menu("相册") {
-                                ForEach(store.albums, id: \.self) { album in
-                                    Button(album) {
-                                        favoritesOnly = false
-                                        selectedAlbum = album
-                                    }
-                                }
-                            }
-                        }
-
-                        Divider()
-                        Button {
-                            showTrash = true
-                        } label: {
-                            Label("最近删除", systemImage: "trash")
-                        }
-                        Button {
-                            showManagement = true
-                        } label: {
-                            Label("管理私人空间", systemImage: "gearshape")
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
-                    }
-                }
-            }
+            .toolbar { vaultToolbar }
             .overlay {
                 if store.isBusy {
                     ZStack {
@@ -144,45 +89,131 @@ struct VaultView: View {
                     pickerItems = []
                 }
             }
-            .sheet(isPresented: $showCamera) {
-                CameraPicker { image in
-                    tryAction { try store.importCapturedImage(image) }
+        }
+    }
+
+    @ViewBuilder
+    private var vaultContent: some View {
+        if visibleItems.isEmpty {
+            ContentUnavailableView {
+                Label(emptyTitle, systemImage: favoritesOnly ? "heart" : "photo.on.rectangle.angled")
+            } description: {
+                Text(emptyDescription)
+            } actions: {
+                PhotosPicker(selection: $pickerItems, maxSelectionCount: 50, matching: .any(of: [.images, .videos])) {
+                    Label("导入照片或视频", systemImage: "photo.badge.plus")
                 }
-                .ignoresSafeArea()
+                .buttonStyle(.borderedProminent)
             }
-            .sheet(isPresented: $showTrash) {
-                RecentlyDeletedView()
-            }
-            .sheet(isPresented: $showManagement) {
-                VaultManagementView()
-            }
-            .alert("新建相册", isPresented: Binding(
-                get: { albumTarget != nil },
-                set: { if !$0 { albumTarget = nil; newAlbumName = "" } }
-            )) {
-                TextField("相册名称", text: $newAlbumName)
-                Button("取消", role: .cancel) {
-                    albumTarget = nil
-                    newAlbumName = ""
-                }
-                Button("创建并移动") {
-                    if let item = albumTarget {
-                        tryAction { try store.assign(item, toAlbum: newAlbumName) }
+        } else {
+            ScrollView {
+                LazyVGrid(columns: columns, spacing: 2) {
+                    ForEach(visibleItems) { item in
+                        NavigationLink(value: item) {
+                            VaultGridCell(item: item)
+                        }
+                        .buttonStyle(.plain)
+                        .contextMenu {
+                            itemContextMenu(item)
+                        }
                     }
-                    albumTarget = nil
-                    newAlbumName = ""
                 }
-                .disabled(newAlbumName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
-            .alert("操作失败", isPresented: Binding(
-                get: { store.errorMessage != nil },
-                set: { if !$0 { store.errorMessage = nil } }
-            )) {
-                Button("好", role: .cancel) { store.errorMessage = nil }
-            } message: {
-                Text(store.errorMessage ?? "未知错误")
+            .background(Color(uiColor: .systemBackground))
+        }
+    }
+
+    @ViewBuilder
+    private func itemContextMenu(_ item: VaultItem) -> some View {
+        Button {
+            tryAction { try store.toggleFavorite(item) }
+        } label: {
+            Label(item.isFavorite ? "取消收藏" : "收藏", systemImage: item.isFavorite ? "heart.slash" : "heart")
+        }
+        albumMenu(for: item)
+        Button(role: .destructive) {
+            tryAction { try store.moveToTrash(item) }
+        } label: {
+            Label("移到最近删除", systemImage: "trash")
+        }
+    }
+
+    @ToolbarContentBuilder
+    private var vaultToolbar: some ToolbarContent {
+        ToolbarItem(placement: .topBarLeading) {
+            Button(action: onLock) {
+                Label("锁定", systemImage: "lock")
             }
         }
+        ToolbarItemGroup(placement: .topBarTrailing) {
+            PhotosPicker(selection: $pickerItems, maxSelectionCount: 50, matching: .any(of: [.images, .videos])) {
+                Image(systemName: "plus")
+            }
+            vaultMenu
+        }
+    }
+
+    private var vaultMenu: some View {
+        Menu {
+            Button {
+                showCamera = true
+            } label: {
+                Label("拍照", systemImage: "camera")
+            }
+            .disabled(!UIImagePickerController.isSourceTypeAvailable(.camera))
+
+            Divider()
+            Button {
+                selectedAlbum = nil
+                favoritesOnly = false
+            } label: {
+                Label("全部项目", systemImage: "square.grid.3x3")
+            }
+            Button {
+                selectedAlbum = nil
+                favoritesOnly = true
+            } label: {
+                Label("收藏", systemImage: "heart")
+            }
+            if !store.albums.isEmpty {
+                Menu("相册") {
+                    ForEach(store.albums, id: \.self) { album in
+                        Button(album) {
+                            favoritesOnly = false
+                            selectedAlbum = album
+                        }
+                    }
+                }
+            }
+
+            Divider()
+            Button {
+                showTrash = true
+            } label: {
+                Label("最近删除", systemImage: "trash")
+            }
+            Button {
+                showManagement = true
+            } label: {
+                Label("管理私人空间", systemImage: "gearshape")
+            }
+        } label: {
+            Image(systemName: "ellipsis.circle")
+        }
+    }
+
+    private var newAlbumAlertBinding: Binding<Bool> {
+        Binding(
+            get: { albumTarget != nil },
+            set: { if !$0 { albumTarget = nil; newAlbumName = "" } }
+        )
+    }
+
+    private var errorAlertBinding: Binding<Bool> {
+        Binding(
+            get: { store.errorMessage != nil },
+            set: { if !$0 { store.errorMessage = nil } }
+        )
     }
 
     @ViewBuilder
