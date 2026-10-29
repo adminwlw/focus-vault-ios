@@ -36,8 +36,7 @@ jobs:
             -scheme FocusVault \
             -destination 'platform=iOS Simulator,name=iPhone 16 Pro,OS=latest' \
             -only-testing:FocusVaultTests \
-            -resultBundlePath build/TestResults.xcresult \
-            CODE_SIGNING_ALLOWED=NO 2>&1 | tee build/tests.log
+            -resultBundlePath build/TestResults.xcresult 2>&1 | tee build/tests.log
 
       - name: Build device app without signing
         id: device_build
@@ -64,8 +63,7 @@ jobs:
             -scheme FocusVault \
             -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation),OS=latest' \
             -only-testing:FocusVaultUITests \
-            -resultBundlePath build/UITest-SE.xcresult \
-            CODE_SIGNING_ALLOWED=NO 2>&1 | tee build/ui-tests-se.log
+            -resultBundlePath build/UITest-SE.xcresult 2>&1 | tee build/ui-tests-se.log
 
       - name: UI test on iPhone 16 Pro Max
         id: ui_tests_large
@@ -77,8 +75,7 @@ jobs:
             -scheme FocusVault \
             -destination 'platform=iOS Simulator,name=iPhone 16 Pro Max,OS=latest' \
             -only-testing:FocusVaultUITests \
-            -resultBundlePath build/UITest-ProMax.xcresult \
-            CODE_SIGNING_ALLOWED=NO 2>&1 | tee build/ui-tests-promax.log
+            -resultBundlePath build/UITest-ProMax.xcresult 2>&1 | tee build/ui-tests-promax.log
 
       - name: Export UI test screenshots
         if: always()
