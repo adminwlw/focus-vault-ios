@@ -7,6 +7,9 @@ final class FocusVaultUITests: XCTestCase {
 
         let setupTitle = app.navigationBars["设置私人空间"]
         XCTAssertTrue(setupTitle.waitForExistence(timeout: 5))
+        let portraitWindow = app.windows.firstMatch.frame
+        XCTAssertGreaterThanOrEqual(portraitWindow.width, 375)
+        XCTAssertGreaterThanOrEqual(portraitWindow.height, 667)
         assertContained(setupTitle, in: app)
         keepScreenshot("01-first-run-password")
 

@@ -730,7 +730,11 @@ private struct CreateBackupView: View {
         Form {
             Section("备份密码") {
                 SecureField("至少 8 个字符", text: $password)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
                 SecureField("再次输入", text: $confirmation)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
             }
             Section {
                 Button {
@@ -799,6 +803,8 @@ private struct RestoreBackupView: View {
             }
             Section("备份密码") {
                 SecureField("输入备份密码", text: $password)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
             }
             Section {
                 Button("验证并恢复") { restore() }
@@ -859,8 +865,14 @@ private struct ChangePasscodeView: View {
         Form {
             Section {
                 SecureField("当前口令", text: $current)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
                 SecureField("新口令", text: $new)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
                 SecureField("再次输入新口令", text: $confirmation)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
                 TextField("新提示词（可选）", text: $hint)
             }
             Button("修改口令") { change() }
