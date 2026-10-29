@@ -30,6 +30,7 @@ targets:
     scheme:
       testTargets:
         - FocusVaultTests
+        - FocusVaultUITests
       gatherCoverageData: true
   FocusVaultTests:
     type: bundle.unit-test
@@ -41,4 +42,15 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.sim360.focusvault.tests
+  FocusVaultUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: UITests
+    dependencies:
+      - target: FocusVault
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.sim360.focusvault.uitests
+        TEST_TARGET_NAME: FocusVault
 

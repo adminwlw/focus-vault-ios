@@ -15,8 +15,10 @@ struct VaultSetupView: View {
                 Section {
                     SecureField("设置口令", text: $passcode)
                         .textContentType(.newPassword)
+                        .accessibilityIdentifier("setup-passcode")
                     SecureField("再次输入", text: $confirmation)
                         .textContentType(.newPassword)
+                        .accessibilityIdentifier("setup-confirmation")
                 } header: {
                     Text("设置密码")
                 } footer: {
@@ -41,6 +43,7 @@ struct VaultSetupView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("创建") { create() }
                         .disabled(passcode.isEmpty || confirmation.isEmpty)
+                        .accessibilityIdentifier("setup-create")
                 }
             }
             .alert("无法创建", isPresented: Binding(

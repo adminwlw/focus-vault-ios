@@ -88,6 +88,7 @@ struct FocusView: View {
                     .frame(minWidth: 92, maxWidth: 180)
                     .disabled(!isEditable)
                     .onSubmit { startOrUnlock() }
+                    .accessibilityIdentifier("timer-duration")
                 Text("分钟")
                     .foregroundStyle(.secondary)
             }
@@ -103,6 +104,7 @@ struct FocusView: View {
                     .submitLabel(.done)
                     .frame(minWidth: 120, maxWidth: 260)
                     .disabled(!isEditable)
+                    .accessibilityIdentifier("timer-name")
             }
         }
         .padding(18)
@@ -120,6 +122,7 @@ struct FocusView: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
+            .accessibilityIdentifier("timer-start")
 
         case .running:
             HStack(spacing: 12) {

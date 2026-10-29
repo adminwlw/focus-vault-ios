@@ -35,6 +35,7 @@ jobs:
             -project FocusVault.xcodeproj \
             -scheme FocusVault \
             -destination 'platform=iOS Simulator,name=iPhone 16 Pro,OS=latest' \
+            -only-testing:FocusVaultTests \
             -resultBundlePath build/TestResults.xcresult \
             CODE_SIGNING_ALLOWED=NO 2>&1 | tee build/tests.log
 
@@ -53,6 +54,39 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO 2>&1 | tee build/device-build.log
 
+      - name: UI test on iPhone SE
+        id: ui_tests_small
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project FocusVault.xcodeproj \
+            -scheme FocusVault \
+            -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation),OS=latest' \
+            -only-testing:FocusVaultUITests \
+            -resultBundlePath build/UITest-SE.xcresult \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee build/ui-tests-se.log
+
+      - name: UI test on iPhone 16 Pro Max
+        id: ui_tests_large
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project FocusVault.xcodeproj \
+            -scheme FocusVault \
+            -destination 'platform=iOS Simulator,name=iPhone 16 Pro Max,OS=latest' \
+            -only-testing:FocusVaultUITests \
+            -resultBundlePath build/UITest-ProMax.xcresult \
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee build/ui-tests-promax.log
+
+      - name: Export UI test screenshots
+        if: always()
+        run: |
+          mkdir -p build/ui-screens/se build/ui-screens/promax
+          test ! -d build/UITest-SE.xcresult || xcrun xcresulttool export attachments --path build/UITest-SE.xcresult --output-path build/ui-screens/se || true
+          test ! -d build/UITest-ProMax.xcresult || xcrun xcresulttool export attachments --path build/UITest-ProMax.xcresult --output-path build/ui-screens/promax || true
+
       - name: Package IPA
         if: steps.device_build.outcome == 'success'
         run: |
@@ -66,7 +100,7 @@ jobs:
           shasum -a 256 build/FocusVault-0.1.0-unsigned.ipa > build/FocusVault-0.1.0-unsigned.ipa.sha256
 
       - name: Upload IPA and test results
-        if: steps.tests.outcome == 'success' && steps.device_build.outcome == 'success'
+        if: steps.tests.outcome == 'success' && steps.device_build.outcome == 'success' && steps.ui_tests_small.outcome == 'success' && steps.ui_tests_large.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: FocusVault-iOS-0.1.0-build-1
@@ -74,6 +108,9 @@ jobs:
             build/FocusVault-0.1.0-unsigned.ipa
             build/FocusVault-0.1.0-unsigned.ipa.sha256
             build/TestResults.xcresult
+            build/UITest-SE.xcresult
+            build/UITest-ProMax.xcresult
+            build/ui-screens
           if-no-files-found: error
           retention-days: 30
 
@@ -85,6 +122,10 @@ jobs:
           mkdir -p release/ci
           test ! -f build/tests.log || cp build/tests.log release/ci/
           test ! -f build/device-build.log || cp build/device-build.log release/ci/
+          test ! -f build/ui-tests-se.log || cp build/ui-tests-se.log release/ci/
+          test ! -f build/ui-tests-promax.log || cp build/ui-tests-promax.log release/ci/
+          rm -rf release/ui-screens
+          test ! -d build/ui-screens || cp -R build/ui-screens release/ui-screens
           test ! -f build/FocusVault-0.1.0-unsigned.ipa || cp build/FocusVault-0.1.0-unsigned.ipa release/
           test ! -f build/FocusVault-0.1.0-unsigned.ipa.sha256 || cp build/FocusVault-0.1.0-unsigned.ipa.sha256 release/
           git config user.name github-actions[bot]
@@ -95,6 +136,6 @@ jobs:
           git push origin HEAD:${GITHUB_REF_NAME}
 
       - name: Fail workflow when verification failed
-        if: steps.tests.outcome != 'success' || steps.device_build.outcome != 'success'
+        if: steps.tests.outcome != 'success' || steps.device_build.outcome != 'success' || steps.ui_tests_small.outcome != 'success' || steps.ui_tests_large.outcome != 'success'
         run: exit 1
 
