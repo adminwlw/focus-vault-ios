@@ -1,0 +1,49 @@
+Application, 0x1016453b0, pid: 5434, label: '计时器' <App element pid: 5434>
+  Window (Main), 0x101646440, {{0.0, 0.0}, {375.0, 667.0}} <AX element pid: 5434, elementOrHash.elementID: 4308814352.4>
+    Other, 0x101647210, {{0.0, 0.0}, {375.0, 667.0}} <AX element pid: 5434, elementOrHash.elementID: 4310770752.5>
+      Other, 0x101646eb0, {{0.0, 0.0}, {375.0, 667.0}} <AX element pid: 5434, elementOrHash.elementID: 4310788944.7>
+        Other, 0x101646b20, {{0.0, 0.0}, {375.0, 667.0}} <AX element pid: 5434, elementOrHash.elementID: 4309030272.11>
+          Other, 0x1016460e0, {{0.0, 0.0}, {375.0, 667.0}} <AX element pid: 5434, elementOrHash.elementID: 4310082832.13>
+            Other, 0x1016475b0, {{0.0, 0.0}, {375.0, 667.0}} <AX element pid: 5434, elementOrHash.elementID: 4309726688.15>
+              Other, 0x101647c90, {{0.0, 0.0}, {375.0, 667.0}} <AX element pid: 5434, elementOrHash.elementID: 4309732624.17>
+                Other, 0x101647900, {{0.0, 0.0}, {375.0, 667.0}} <AX element pid: 5434, elementOrHash.elementID: 4309786720.20>
+                  Other, 0x101648010, {{0.0, 0.0}, {375.0, 667.0}} <AX element pid: 5434, elementOrHash.elementID: 4309748448.25>
+                    Other, 0x10164b360, {{0.0, 0.0}, {375.0, 667.0}} <AX element pid: 5434, elementOrHash.elementID: 4309221600.29>
+                      Other, 0x10164b6c0, {{0.0, 0.0}, {375.0, 667.0}} <AX element pid: 5434, elementOrHash.elementID: 4309295968.33>
+                        Other, 0x10164ba40, {{0.0, 0.0}, {375.0, 667.0}} <AX element pid: 5434, elementOrHash.elementID: 4309823632.36>
+                          NavigationBar, 0x10164bdc0, {{0.0, 20.0}, {375.0, 44.0}}, identifier: '计时器' <AX element pid: 5434, elementOrHash.elementID: 4353996848.39>
+                            StaticText, 0x10164c150, {{162.0, 32.0}, {51.0, 20.5}}, label: '计时器' <AX element pid: 5434, elementOrHash.elementID: 4309914224.200>
+                          Other, 0x10164c4a0, {{0.0, 0.0}, {375.0, 667.0}} <AX element pid: 5434, elementOrHash.elementID: 4309824080.40>
+                            Other, 0x10164c830, {{0.0, 0.0}, {375.0, 667.0}} <AX element pid: 5434, elementOrHash.elementID: 4310932000.43>
+                              Other, 0x10164cba0, {{0.0, 0.0}, {375.0, 667.0}} <AX element pid: 5434, elementOrHash.elementID: 4353989008.59>
+                                Other, 0x10164cf10, {{0.0, 0.0}, {375.0, 667.0}} <AX element pid: 5434, elementOrHash.elementID: 4310798704.77>
+                                  ScrollView, 0x10164d250, {{0.0, 0.0}, {375.0, 667.0}} <AX element pid: 5434, elementOrHash.elementID: 4337559552.92>
+                                    Other, 0x10164d5c0, {{0.0, 17.0}, {375.0, 601.0}} <AX element pid: 5434, elementOrHash.elementID: 4309812720.101>
+                                      Other, 0x10164d930, {{47.5, 24.0}, {280.0, 280.0}}, label: '剩余时间 24:51，计时中' <AX element pid: 5434, elementOrHash.elementID: 4311118240.115>
+                                        StaticText, 0x10164dca0, {{114.8, 117.5}, {145.5, 67.0}}, label: '24:51' <AX element pid: 5434, elementOrHash.elementID: 4310967808.122>
+                                        StaticText, 0x10164e000, {{165.0, 192.5}, {45.0, 18.0}}, label: '计时中' <AX element pid: 5434, elementOrHash.elementID: 4311117456.123>
+                                      Other, 0x10164e350, {{20.0, 323.0}, {335.0, 108.5}} <AX element pid: 5434, elementOrHash.elementID: 4311124256.116>
+                                        StaticText, 0x10164e6b0, {{38.0, 341.8}, {67.5, 20.5}}, label: '计时时长' <AX element pid: 5434, elementOrHash.elementID: 4311119696.124>
+                                        TextField, 0x10164ea10, {{115.0, 341.0}, {180.0, 22.0}}, identifier: 'timer-duration', placeholderValue: '分钟', value: 25, Disabled <AX element pid: 5434, elementOrHash.elementID: 4320657920.125>
+                                        StaticText, 0x10164eda0, {{303.0, 341.8}, {34.0, 20.5}}, label: '分钟' <AX element pid: 5434, elementOrHash.elementID: 4311121584.126>
+                                        StaticText, 0x10164f0f0, {{38.0, 392.2}, {34.0, 20.5}}, label: '名称' <AX element pid: 5434, elementOrHash.elementID: 4311122016.127>
+                                        TextField, 0x10164f470, {{80.0, 391.5}, {257.0, 22.0}}, identifier: 'timer-name', placeholderValue: '计时', value: 计时, Disabled <AX element pid: 5434, elementOrHash.elementID: 4328779264.128>
+                                      Button, 0x10164f7f0, {{20.0, 455.5}, {161.5, 50.5}}, label: '暂停' <AX element pid: 5434, elementOrHash.elementID: 4310928480.226>
+                                        Image, 0x10164fb50, {{74.5, 473.5}, {10.5, 14.0}}, identifier: 'pause.fill', label: '暂停' <AX element pid: 5434, elementOrHash.elementID: 4310961232.228>
+                                        StaticText, 0x10164fea0, {{20.0, 455.5}, {161.5, 50.5}}, label: '暂停' <AX element pid: 5434, elementOrHash.elementID: 4310928048.229>
+                                      Button, 0x101650220, {{193.5, 455.5}, {161.5, 50.5}}, label: '结束' <AX element pid: 5434, elementOrHash.elementID: 4310840208.227>
+                                      Button, 0x101650570, {{20.0, 530.0}, {105.0, 52.0}}, label: '5 分钟', Disabled <AX element pid: 5434, elementOrHash.elementID: 4311128144.118>
+                                      Button, 0x1016508c0, {{135.0, 530.0}, {105.0, 52.0}}, label: '10 分钟', Disabled <AX element pid: 5434, elementOrHash.elementID: 4311129040.119>
+                                      Button, 0x101650c30, {{250.0, 530.0}, {105.0, 52.0}}, label: '30 分钟', Disabled <AX element pid: 5434, elementOrHash.elementID: 4311129936.120>
+                                    Other, 0x101650f80, {{342.0, 64.0}, {30.0, 554.0}}, label: '垂直滚动条, 2页', value: 100% <AX element pid: 5434, elementOrHash.elementID: 4310982704.102>
+                                      Other, 0x101651300, {{369.0, 103.0}, {3.0, 512.0}} <AX element pid: 5434, elementOrHash.elementID: 4310972384.121>
+                                    Other, 0x101651690, {{342.0, 64.0}, {30.0, 554.0}}, label: '垂直滚动条, 2页', value: 100% <AX element pid: 5434, elementOrHash.elementID: 4310982704.102>
+                                      Other, 0x101651a00, {{369.0, 103.0}, {3.0, 512.0}} <AX element pid: 5434, elementOrHash.elementID: 4310972384.121>
+              TabBar, 0x101651da0, {{0.0, 618.0}, {375.0, 49.0}}, label: '标签页栏' <AX element pid: 5434, elementOrHash.elementID: 4309729616.18>
+                Button, 0x1016520f0, {{2.0, 619.0}, {121.0, 48.0}}, identifier: 'timer', label: '计时', Selected <AX element pid: 5434, elementOrHash.elementID: 4353761184.21>
+                  Image, 0x101652440, {{48.5, 622.5}, {27.5, 27.5}}, identifier: 'timer', label: '计时器' <AX element pid: 5434, elementOrHash.elementID: 4301395520.26>
+                Button, 0x1016527b0, {{127.0, 619.0}, {121.0, 48.0}}, identifier: 'clock.arrow.circlepath', label: '记录' <AX element pid: 5434, elementOrHash.elementID: 4309702288.22>
+                Button, 0x101652b40, {{252.0, 619.0}, {121.0, 48.0}}, identifier: 'gearshape', label: '设置' <AX element pid: 5434, elementOrHash.elementID: 4310809488.23>
+  Window, 0x101652ee0, {{0.0, 0.0}, {375.0, 667.0}} <AX element pid: 5434, elementOrHash.elementID: 4312803840.131>
+    Other, 0x101653240, {{0.0, 0.0}, {375.0, 667.0}} <AX element pid: 5434, elementOrHash.elementID: 4301593520.133>
+      Other, 0x1016535c0, {{0.0, 0.0}, {375.0, 667.0}} <AX element pid: 5434, elementOrHash.elementID: 4309411280.135>
