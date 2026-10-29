@@ -1,0 +1,7 @@
+.DS_Store
+build/
+DerivedData/
+FocusVault.xcodeproj/
+xcuserdata/
+*.ipa
+
