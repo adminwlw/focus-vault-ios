@@ -6,11 +6,12 @@ final class FocusTimerStore: ObservableObject {
     private let stateKey = "focus-timer-state-v1"
     private let sessionsKey = "focus-sessions-v1"
     private let remindersKey = "focus-reminders-v1"
+    private let nowProvider: () -> Date
     private var ticker: Timer?
 
     @Published private(set) var state = FocusTimerState()
     @Published private(set) var sessions: [FocusSession] = []
-    @Published private(set) var now = Date()
+    @Published private(set) var now: Date
     @Published private(set) var notificationsDenied = false
     @Published var remindersEnabled: Bool {
         didSet {
@@ -27,7 +28,9 @@ final class FocusTimerStore: ObservableObject {
         }
     }
 
-    init() {
+    init(nowProvider: @escaping () -> Date = Date.init) {
+        self.nowProvider = nowProvider
+        now = nowProvider()
         remindersEnabled = UserDefaults.standard.bool(forKey: remindersKey)
         load()
         refresh()
@@ -65,11 +68,13 @@ final class FocusTimerStore: ObservableObject {
 
     func start() {
         guard state.phase == .idle || state.phase == .finished else { return }
+        let timestamp = nowProvider()
+        now = timestamp
         let id = UUID()
-        state.startedAt = Date()
+        state.startedAt = timestamp
         state.sessionID = id
         state.remainingWhenPaused = state.plannedSeconds
-        state.endDate = Date().addingTimeInterval(TimeInterval(state.plannedSeconds))
+        state.endDate = timestamp.addingTimeInterval(TimeInterval(state.plannedSeconds))
         state.phase = .running
         scheduleNotification()
         save()
@@ -78,6 +83,7 @@ final class FocusTimerStore: ObservableObject {
 
     func pause() {
         guard state.phase == .running else { return }
+        now = nowProvider()
         state.remainingWhenPaused = remainingSeconds
         state.endDate = nil
         state.phase = .paused
@@ -88,7 +94,9 @@ final class FocusTimerStore: ObservableObject {
 
     func resume() {
         guard state.phase == .paused else { return }
-        state.endDate = Date().addingTimeInterval(TimeInterval(state.remainingWhenPaused))
+        let timestamp = nowProvider()
+        now = timestamp
+        state.endDate = timestamp.addingTimeInterval(TimeInterval(state.remainingWhenPaused))
         state.phase = .running
         scheduleNotification()
         save()
@@ -97,6 +105,7 @@ final class FocusTimerStore: ObservableObject {
 
     func endEarly() {
         guard state.phase == .running || state.phase == .paused else { return }
+        now = nowProvider()
         let focused = max(0, state.plannedSeconds - remainingSeconds)
         appendSession(outcome: .endedEarly, focusedSeconds: focused)
         reset()
@@ -104,6 +113,7 @@ final class FocusTimerStore: ObservableObject {
 
     func reset() {
         cancelNotification()
+        now = nowProvider()
         state.phase = .idle
         state.endDate = nil
         state.sessionID = nil
@@ -114,7 +124,7 @@ final class FocusTimerStore: ObservableObject {
     }
 
     func refresh() {
-        now = Date()
+        now = nowProvider()
         if state.phase == .running, remainingSeconds == 0 {
             appendSession(outcome: .completed, focusedSeconds: state.plannedSeconds)
             state.phase = .finished
@@ -127,7 +137,7 @@ final class FocusTimerStore: ObservableObject {
     }
 
     private func appendSession(outcome: FocusSession.Outcome, focusedSeconds: Int) {
-        let endedAt = Date()
+        let endedAt = nowProvider()
         let startedAt = state.startedAt ?? endedAt.addingTimeInterval(-TimeInterval(focusedSeconds))
         let session = FocusSession(
             id: state.sessionID ?? UUID(),

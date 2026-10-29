@@ -13,6 +13,7 @@ struct VaultView: View {
     @EnvironmentObject private var store: VaultStore
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var pickerItems: [PhotosPickerItem] = []
+    @State private var showPhotoPicker = false
     @State private var selectedAlbum: String?
     @State private var favoritesOnly = false
     @State private var showCamera = false
@@ -142,14 +143,25 @@ struct VaultView: View {
             .onChange(of: pickerItems) { newItems in
                 guard !newItems.isEmpty else { return }
                 Task {
+                    let previousCount = store.activeItems.count
                     let identifiers = await store.importSelections(newItems)
                     pickerItems = []
                     if !identifiers.isEmpty {
                         importedSystemAssetIDs = identifiers
                         confirmDeleteSystemOriginals = true
+                    } else if store.activeItems.count > previousCount,
+                              store.errorMessage == nil {
+                        store.errorMessage = "项目已安全导入，但系统没有提供可删除的原件标识，因此没有发起删除。请在系统“照片”中手动删除原件。"
                     }
                 }
             }
+            .photosPicker(
+                isPresented: $showPhotoPicker,
+                selection: $pickerItems,
+                maxSelectionCount: 50,
+                matching: .any(of: [.images, .videos]),
+                photoLibrary: .shared()
+            )
         }
     }
 
@@ -162,7 +174,7 @@ struct VaultView: View {
                     systemImage: favoritesOnly ? "heart" : "photo.on.rectangle.angled",
                     description: emptyDescription
                 )
-                PhotosPicker(selection: $pickerItems, maxSelectionCount: 50, matching: .any(of: [.images, .videos])) {
+                Button(action: requestPhotoImport) {
                     Label("导入照片或视频", systemImage: "photo.badge.plus")
                 }
                 .buttonStyle(.borderedProminent)
@@ -233,7 +245,7 @@ struct VaultView: View {
                 Text(dynamicTypeSize.isAccessibilitySize ? "\(selectedIDs.count) 项" : "已选 \(selectedIDs.count) 项")
                     .font(.subheadline.monospacedDigit())
             } else {
-                PhotosPicker(selection: $pickerItems, maxSelectionCount: 50, matching: .any(of: [.images, .videos])) {
+                Button(action: requestPhotoImport) {
                     Label("导入照片或视频", systemImage: "plus")
                         .labelStyle(.iconOnly)
                 }
@@ -357,6 +369,16 @@ struct VaultView: View {
 
     private func tryAction(_ action: () throws -> Void) {
         do { try action() } catch { store.errorMessage = error.localizedDescription }
+    }
+
+    private func requestPhotoImport() {
+        Task {
+            guard await store.requestPhotoLibraryReadWriteAccess() else {
+                store.errorMessage = "需要允许读取和修改照片，才能在导入完成后请求删除系统原件。"
+                return
+            }
+            showPhotoPicker = true
+        }
     }
 
     private var selectionBar: some View {
@@ -974,7 +996,7 @@ private struct ChangePasscodeView: View {
 
     private var canChange: Bool {
         !current.isEmpty
-            && new.count >= 6
+            && VaultAuthStore.isValidPasscode(new)
             && new == confirmation
             && (trimmedHint.isEmpty || !trimmedHint.localizedCaseInsensitiveContains(new))
     }
@@ -983,17 +1005,20 @@ private struct ChangePasscodeView: View {
         Form {
             Section {
                 SecureField("当前口令", text: $current)
+                    .keyboardType(.numberPad)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                 SecureField("新口令", text: $new)
+                    .keyboardType(.numberPad)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                 SecureField("再次输入新口令", text: $confirmation)
+                    .keyboardType(.numberPad)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                 TextField("新提示词（可选）", text: $hint)
-                if !new.isEmpty && new.count < 6 {
-                    validationLabel("新口令至少需要 6 个字符。")
+                if !new.isEmpty && !VaultAuthStore.isValidPasscode(new) {
+                    validationLabel("新口令至少需要 6 位数字。")
                 } else if !confirmation.isEmpty && new != confirmation {
                     validationLabel("两次输入的新口令不一致。")
                 } else if !new.isEmpty

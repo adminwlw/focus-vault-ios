@@ -91,8 +91,8 @@ jobs:
           test -d "$APP_PATH"
           mkdir -p build/Payload
           cp -R "$APP_PATH" build/Payload/
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP_PATH/Info.plist")" = "0.1.0"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP_PATH/Info.plist")" = "1"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP_PATH/Info.plist")" = "0.1.1"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP_PATH/Info.plist")" = "2"
           /usr/libexec/PlistBuddy -c 'Print :UILaunchScreen' "$APP_PATH/Info.plist" >/dev/null
           /usr/libexec/PlistBuddy -c 'Print :NSCameraUsageDescription' "$APP_PATH/Info.plist" >/dev/null
           /usr/libexec/PlistBuddy -c 'Print :NSPhotoLibraryUsageDescription' "$APP_PATH/Info.plist" >/dev/null
@@ -100,17 +100,17 @@ jobs:
           test -s "$APP_PATH/PrivacyInfo.xcprivacy"
           plutil -lint "$APP_PATH/PrivacyInfo.xcprivacy"
           compgen -G "$APP_PATH/AppIcon*.png" >/dev/null
-          ditto -c -k --sequesterRsrc --keepParent build/Payload build/FocusVault-0.1.0-unsigned.ipa
-          shasum -a 256 build/FocusVault-0.1.0-unsigned.ipa > build/FocusVault-0.1.0-unsigned.ipa.sha256
+          ditto -c -k --sequesterRsrc --keepParent build/Payload build/FocusVault-0.1.1-unsigned.ipa
+          shasum -a 256 build/FocusVault-0.1.1-unsigned.ipa > build/FocusVault-0.1.1-unsigned.ipa.sha256
 
       - name: Upload IPA and test results
         if: steps.tests.outcome == 'success' && steps.device_build.outcome == 'success' && steps.ui_tests_small.outcome == 'success' && steps.ui_tests_large.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
-          name: FocusVault-iOS-0.1.0-build-1
+          name: FocusVault-iOS-0.1.1-build-2
           path: |
-            build/FocusVault-0.1.0-unsigned.ipa
-            build/FocusVault-0.1.0-unsigned.ipa.sha256
+            build/FocusVault-0.1.1-unsigned.ipa
+            build/FocusVault-0.1.1-unsigned.ipa.sha256
             build/TestResults.xcresult
             build/UITest-SE.xcresult
             build/UITest-ProMax.xcresult

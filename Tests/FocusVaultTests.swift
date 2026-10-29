@@ -14,30 +14,39 @@ final class FocusVaultTests: XCTestCase {
         }
 
         let store = VaultAuthStore()
-        try store.create(passcode: "vault123", confirmation: "vault123", hint: "旧提示")
+        try store.create(passcode: "12345678", confirmation: "12345678", hint: "旧提示")
         XCTAssertEqual(store.hint, "旧提示")
         store.lock()
 
-        XCTAssertFalse(store.verify("wrong-password", quietly: true))
-        XCTAssertTrue(store.verify("vault123", quietly: true))
+        XCTAssertFalse(store.verify("00000000", quietly: true))
+        XCTAssertTrue(store.verify("12345678", quietly: true))
 
         XCTAssertThrowsError(
             try store.changePasscode(
-                current: "vault123",
-                new: "new-vault123",
-                confirmation: "new-vault123",
-                hint: "new-vault123 的提示"
+                current: "12345678",
+                new: "letters123",
+                confirmation: "letters123",
+                hint: ""
+            )
+        )
+
+        XCTAssertThrowsError(
+            try store.changePasscode(
+                current: "12345678",
+                new: "87654321",
+                confirmation: "87654321",
+                hint: "87654321 的提示"
             )
         )
         try store.changePasscode(
-            current: "vault123",
-            new: "new-vault123",
-            confirmation: "new-vault123",
+            current: "12345678",
+            new: "87654321",
+            confirmation: "87654321",
             hint: "新的提示"
         )
         store.lock()
-        XCTAssertFalse(store.verify("vault123", quietly: true))
-        XCTAssertTrue(store.verify("new-vault123", quietly: true))
+        XCTAssertFalse(store.verify("12345678", quietly: true))
+        XCTAssertTrue(store.verify("87654321", quietly: true))
         XCTAssertEqual(store.hint, "新的提示")
     }
 
@@ -86,6 +95,34 @@ final class FocusVaultTests: XCTestCase {
             from: JSONEncoder().encode(original)
         )
         XCTAssertEqual(restored, original)
+    }
+
+    @MainActor
+    func testTimerConfiguredDurationAndPauseResumeUseFreshClock() {
+        let defaults = UserDefaults.standard
+        let keys = ["focus-timer-state-v1", "focus-sessions-v1", "focus-reminders-v1"]
+        keys.forEach { defaults.removeObject(forKey: $0) }
+        defer { keys.forEach { defaults.removeObject(forKey: $0) } }
+
+        var current = Date(timeIntervalSince1970: 1_800_000_000)
+        let store = FocusTimerStore(nowProvider: { current })
+        store.configure(taskName: "回归测试", seconds: 120)
+        store.start()
+        XCTAssertEqual(store.remainingSeconds, 120)
+
+        current.addTimeInterval(30)
+        store.refresh()
+        store.pause()
+        XCTAssertEqual(store.remainingSeconds, 90)
+
+        current.addTimeInterval(300)
+        store.resume()
+        XCTAssertEqual(store.remainingSeconds, 90)
+
+        current.addTimeInterval(15)
+        store.refresh()
+        XCTAssertEqual(store.remainingSeconds, 75)
+        store.endEarly()
     }
 
     func testBackupCodecRoundTripAndTamperRejection() throws {

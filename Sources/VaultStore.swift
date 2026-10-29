@@ -103,15 +103,27 @@ final class VaultStore: ObservableObject {
         return importedAssetIdentifiers
     }
 
+    func requestPhotoLibraryReadWriteAccess() async -> Bool {
+        let current = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+        let status: PHAuthorizationStatus
+        if current == .notDetermined {
+            status = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
+        } else {
+            status = current
+        }
+        return status == .authorized || status == .limited
+    }
+
     func deleteSystemAssets(localIdentifiers: [String]) async throws {
-        guard !localIdentifiers.isEmpty else { return }
+        let identifiers = Array(Set(localIdentifiers))
+        guard !identifiers.isEmpty else { return }
         let status = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
         guard status == .authorized || status == .limited else {
             throw ValidationError("没有照片库修改权限，系统原件已保留。")
         }
-        let assets = PHAsset.fetchAssets(withLocalIdentifiers: localIdentifiers, options: nil)
-        guard assets.count > 0 else {
-            throw ValidationError("找不到可删除的系统原件，它们可能已被移动或删除。")
+        let assets = PHAsset.fetchAssets(withLocalIdentifiers: identifiers, options: nil)
+        guard assets.count == identifiers.count else {
+            throw ValidationError("部分系统原件已无法定位。为避免误删，本次没有删除任何项目。")
         }
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             PHPhotoLibrary.shared().performChanges({

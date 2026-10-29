@@ -30,6 +30,10 @@ final class FocusVaultUITests: XCTestCase {
         let duration = app.textFields["timer-duration"]
         XCTAssertTrue(duration.exists)
         assertContained(duration, in: app)
+        duration.tap()
+        XCTAssertTrue(app.keyboards.keys["1"].waitForExistence(timeout: 2))
+        XCTAssertFalse(app.keyboards.keys["Q"].exists)
+        app.toolbars.buttons["完成"].tap()
         keepScreenshot("02-manual-timer-portrait")
 
         XCUIDevice.shared.orientation = .landscapeLeft
@@ -41,7 +45,7 @@ final class FocusVaultUITests: XCTestCase {
         XCUIDevice.shared.orientation = .portrait
         app.swipeDown()
 
-        replaceText(in: duration, with: "wrong-password")
+        replaceText(in: duration, with: "11111111")
         app.buttons["timer-start"].tap()
         XCTAssertTrue(app.staticTexts["计时中"].waitForExistence(timeout: 3))
         app.buttons["结束"].tap()

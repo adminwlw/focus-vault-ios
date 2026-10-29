@@ -204,12 +204,16 @@ final class VaultAuthStore: ObservableObject {
         UserDefaults.standard.string(forKey: hintKey) ?? ""
     }
 
+    static func isValidPasscode(_ value: String) -> Bool {
+        value.count >= 6 && value.utf8.allSatisfy { (48...57).contains($0) }
+    }
+
     func create(passcode: String, confirmation: String, hint: String) throws {
         guard passcode == confirmation else {
             throw ValidationError("两次输入的口令不一致。")
         }
-        guard passcode.count >= 6 else {
-            throw ValidationError("口令至少需要 6 个字符。")
+        guard Self.isValidPasscode(passcode) else {
+            throw ValidationError("口令至少需要 6 位数字。")
         }
         guard !hint.isEmpty ? !hint.localizedCaseInsensitiveContains(passcode) : true else {
             throw ValidationError("提示词不能包含完整口令。")
@@ -269,8 +273,8 @@ final class VaultAuthStore: ObservableObject {
 
     func changePasscode(current: String, new: String, confirmation: String, hint: String) throws {
         guard verify(current) else { throw ValidationError("当前口令不正确。") }
-        guard new == confirmation, new.count >= 6 else {
-            throw ValidationError("新口令至少需要 6 个字符，并且两次输入必须一致。")
+        guard new == confirmation, Self.isValidPasscode(new) else {
+            throw ValidationError("新口令至少需要 6 位数字，并且两次输入必须一致。")
         }
         guard hint.isEmpty || !hint.localizedCaseInsensitiveContains(new) else {
             throw ValidationError("提示词不能包含完整口令。")

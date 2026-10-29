@@ -138,12 +138,17 @@ struct FocusView: View {
         HStack(spacing: 8) {
             TextField("分钟", text: $durationInput)
                 .multilineTextAlignment(.trailing)
+                .keyboardType(.numberPad)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .submitLabel(.go)
                 .focused($focusedField, equals: .duration)
                 .frame(minWidth: 92, maxWidth: 180)
                 .disabled(!isEditable)
+                .onChange(of: durationInput) { newValue in
+                    let digits = newValue.filter { $0 >= "0" && $0 <= "9" }
+                    if digits != newValue { durationInput = digits }
+                }
                 .onSubmit { startOrUnlock() }
                 .accessibilityIdentifier("timer-duration")
             Text("分钟")

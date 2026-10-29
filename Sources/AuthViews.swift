@@ -22,7 +22,7 @@ struct VaultSetupView: View {
     }
 
     private var canCreate: Bool {
-        passcode.count >= 6
+        VaultAuthStore.isValidPasscode(passcode)
             && confirmation == passcode
             && (trimmedHint.isEmpty || !trimmedHint.localizedCaseInsensitiveContains(passcode))
     }
@@ -32,6 +32,7 @@ struct VaultSetupView: View {
             Form {
                 Section {
                     SecureField("设置口令", text: $passcode)
+                        .keyboardType(.numberPad)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .submitLabel(.next)
@@ -39,6 +40,7 @@ struct VaultSetupView: View {
                         .onSubmit { focusedField = .confirmation }
                         .accessibilityIdentifier("setup-passcode")
                     SecureField("再次输入", text: $confirmation)
+                        .keyboardType(.numberPad)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .submitLabel(.next)
@@ -53,8 +55,8 @@ struct VaultSetupView: View {
                             if canCreate { create() }
                         }
 
-                    if !passcode.isEmpty && passcode.count < 6 {
-                        validationLabel("口令至少需要 6 个字符。")
+                    if !passcode.isEmpty && !VaultAuthStore.isValidPasscode(passcode) {
+                        validationLabel("口令至少需要 6 位数字。")
                     } else if !confirmation.isEmpty && confirmation != passcode {
                         validationLabel("两次输入的口令不一致。")
                     } else if !passcode.isEmpty
@@ -65,7 +67,7 @@ struct VaultSetupView: View {
                 } header: {
                     Text("设置密码")
                 } footer: {
-                    Text("至少 6 个字符，建议使用 8 位以上。密码无法找回，请同时保管好后续创建的加密备份。")
+                    Text("至少 6 位数字，建议使用 8 位以上。密码无法找回，请同时保管好后续创建的加密备份。")
                 }
 
                 Section {
