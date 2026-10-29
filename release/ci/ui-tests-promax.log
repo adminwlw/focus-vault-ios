@@ -30,27 +30,27 @@ GatherProvisioningInputs
 
 CreateBuildDescription
 
-ExecuteExternalTool /Applications/Xcode_16.4.app/Contents/Developer/usr/bin/actool --print-asset-tag-combinations --output-format xml1 /Users/runner/work/focus-vault-ios/focus-vault-ios/Resources/Assets.xcassets
-
 ExecuteExternalTool /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+
+ExecuteExternalTool /Applications/Xcode_16.4.app/Contents/Developer/usr/bin/actool --print-asset-tag-combinations --output-format xml1 /Users/runner/work/focus-vault-ios/focus-vault-ios/Resources/Assets.xcassets
 
 ExecuteExternalTool /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -x c -c /dev/null
 
-ExecuteExternalTool /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
-
 ExecuteExternalTool /Applications/Xcode_16.4.app/Contents/Developer/usr/bin/actool --version --output-format xml1
 
-Build description signature: 019585065a3cd5400c9384fd14c81890
-Build description path: /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/XCBuildData/019585065a3cd5400c9384fd14c81890.xcbuilddata
+ExecuteExternalTool /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+Build description signature: a237128c51409d531391abaa7a79333f
+Build description path: /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/XCBuildData/a237128c51409d531391abaa7a79333f.xcbuilddata
 ProcessProductPackaging "" /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVault.build/FocusVault.app-Simulated.xcent (in target 'FocusVault' from project 'FocusVault')
     cd /Users/runner/work/focus-vault-ios/focus-vault-ios
-
+    
     Entitlements:
-
+    
     {
     "application-identifier" = "FAKETEAMID.com.sim360.focusvault";
 }
-
+    
     builtin-productPackagingUtility -entitlements -format xml -o /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVault.build/FocusVault.app-Simulated.xcent
 
 ProcessProductPackagingDER /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVault.build/FocusVault.app-Simulated.xcent /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVault.build/FocusVault.app-Simulated.xcent.der (in target 'FocusVault' from project 'FocusVault')
@@ -94,8 +94,8 @@ note: Emplaced /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwi
 ExtractAppIntentsMetadata (in target 'FocusVault' from project 'FocusVault')
     cd /Users/runner/work/focus-vault-ios/focus-vault-ios
     /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name FocusVault --sdk-root /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk --xcode-version 16F6 --platform-family iOS --deployment-target 16.0 --bundle-identifier com.sim360.focusvault --output /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Products/Debug-iphonesimulator/FocusVault.app --target-triple arm64-apple-ios16.0-simulator --binary-file /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Products/Debug-iphonesimulator/FocusVault.app/FocusVault --dependency-file /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVault.build/Objects-normal/arm64/FocusVault_dependency_info.dat --stringsdata-file /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVault.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVault.build/Objects-normal/arm64/FocusVault.SwiftFileList --metadata-file-list /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVault.build/FocusVault.DependencyMetadataFileList --static-metadata-file-list /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVault.build/FocusVault.DependencyStaticMetadataFileList --swift-const-vals-list /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVault.build/Objects-normal/arm64/FocusVault.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --validate-assistant-intents --no-app-shortcuts-localization
-2026-10-29 04:51:15.679 appintentsmetadataprocessor[10697:42934] Starting appintentsmetadataprocessor export
-2026-10-29 04:51:15.681 appintentsmetadataprocessor[10697:42934] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+2026-10-29 06:46:43.825 appintentsmetadataprocessor[10429:41103] Starting appintentsmetadataprocessor export
+2026-10-29 06:46:43.828 appintentsmetadataprocessor[10429:41103] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
 
 ProcessInfoPlistFile /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Products/Debug-iphonesimulator/FocusVault.app/Info.plist /Users/runner/work/focus-vault-ios/focus-vault-ios/Resources/Info.plist (in target 'FocusVault' from project 'FocusVault')
     cd /Users/runner/work/focus-vault-ios/focus-vault-ios
@@ -103,16 +103,16 @@ ProcessInfoPlistFile /Users/runner/Library/Developer/Xcode/DerivedData/FocusVaul
 
 ProcessProductPackaging "" /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVaultUITests.build/FocusVaultUITests.xctest-Simulated.xcent (in target 'FocusVaultUITests' from project 'FocusVault')
     cd /Users/runner/work/focus-vault-ios/focus-vault-ios
-
+    
     Entitlements:
-
+    
     {
     "application-identifier" = "FAKETEAMID.com.sim360.focusvault.uitests.xctrunner";
     "keychain-access-groups" =     (
         "FAKETEAMID.com.sim360.focusvault.uitests.xctrunner"
     );
 }
-
+    
     builtin-productPackagingUtility -entitlements -format xml -o /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVaultUITests.build/FocusVaultUITests.xctest-Simulated.xcent
 
 ProcessProductPackagingDER /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVaultUITests.build/FocusVaultUITests.xctest-Simulated.xcent /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVaultUITests.build/FocusVaultUITests.xctest-Simulated.xcent.der (in target 'FocusVaultUITests' from project 'FocusVault')
@@ -138,36 +138,36 @@ CopySwiftLibs /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwix
 ExtractAppIntentsMetadata (in target 'FocusVaultTests' from project 'FocusVault')
     cd /Users/runner/work/focus-vault-ios/focus-vault-ios
     /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name FocusVaultTests --sdk-root /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk --xcode-version 16F6 --platform-family iOS --deployment-target 16.0 --bundle-identifier com.sim360.focusvault.tests --output /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Products/Debug-iphonesimulator/FocusVault.app/PlugIns/FocusVaultTests.xctest --target-triple arm64-apple-ios16.0-simulator --binary-file /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Products/Debug-iphonesimulator/FocusVault.app/PlugIns/FocusVaultTests.xctest/FocusVaultTests --dependency-file /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVaultTests.build/Objects-normal/arm64/FocusVaultTests_dependency_info.dat --stringsdata-file /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVaultTests.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVaultTests.build/Objects-normal/arm64/FocusVaultTests.SwiftFileList --metadata-file-list /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVaultTests.build/FocusVaultTests.DependencyMetadataFileList --static-metadata-file-list /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVaultTests.build/FocusVaultTests.DependencyStaticMetadataFileList --swift-const-vals-list /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVaultTests.build/Objects-normal/arm64/FocusVaultTests.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --validate-assistant-intents --no-app-shortcuts-localization
-2026-10-29 04:51:16.094 appintentsmetadataprocessor[10712:43002] Starting appintentsmetadataprocessor export
-2026-10-29 04:51:16.095 appintentsmetadataprocessor[10712:43002] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+2026-10-29 06:46:44.206 appintentsmetadataprocessor[10501:41286] Starting appintentsmetadataprocessor export
+2026-10-29 06:46:44.207 appintentsmetadataprocessor[10501:41286] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
 
 CodeSign /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Products/Debug-iphonesimulator/FocusVault.app/PlugIns/FocusVaultTests.xctest (in target 'FocusVaultTests' from project 'FocusVault')
     cd /Users/runner/work/focus-vault-ios/focus-vault-ios
-
+    
     Signing Identity:     "Sign to Run Locally"
-
+    
     /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Products/Debug-iphonesimulator/FocusVault.app/PlugIns/FocusVaultTests.xctest
 
 CodeSign /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Products/Debug-iphonesimulator/FocusVault.app/FocusVault.debug.dylib (in target 'FocusVault' from project 'FocusVault')
     cd /Users/runner/work/focus-vault-ios/focus-vault-ios
-
+    
     Signing Identity:     "Sign to Run Locally"
-
+    
     /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Products/Debug-iphonesimulator/FocusVault.app/FocusVault.debug.dylib
 
 CodeSign /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Products/Debug-iphonesimulator/FocusVault.app/__preview.dylib (in target 'FocusVault' from project 'FocusVault')
     cd /Users/runner/work/focus-vault-ios/focus-vault-ios
-
+    
     Signing Identity:     "Sign to Run Locally"
-
+    
     /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Products/Debug-iphonesimulator/FocusVault.app/__preview.dylib
 /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Products/Debug-iphonesimulator/FocusVault.app/__preview.dylib: replacing existing signature
 
 CodeSign /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Products/Debug-iphonesimulator/FocusVault.app (in target 'FocusVault' from project 'FocusVault')
     cd /Users/runner/work/focus-vault-ios/focus-vault-ios
-
+    
     Signing Identity:     "Sign to Run Locally"
-
+    
     /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Products/Debug-iphonesimulator/FocusVault.app
 
 Validate /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Products/Debug-iphonesimulator/FocusVault.app (in target 'FocusVault' from project 'FocusVault')
@@ -182,209 +182,224 @@ Ld /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahb
     cd /Users/runner/work/focus-vault-ios/focus-vault-ios
     /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios16.0-simulator -bundle -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk -O0 -L/Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -L/Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Products/Debug-iphonesimulator -L/Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib -F/Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/EagerLinkingTBDs/Debug-iphonesimulator -F/Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Products/Debug-iphonesimulator -iframework /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/Library/Frameworks -iframework /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk/Developer/Library/Frameworks -filelist /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVaultUITests.build/Objects-normal/arm64/FocusVaultUITests.LinkFileList -Xlinker -rpath -Xlinker @loader_path/Frameworks -Xlinker -rpath -Xlinker @executable_path/Frameworks -dead_strip -Xlinker -object_path_lto -Xlinker /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVaultUITests.build/Objects-normal/arm64/FocusVaultUITests_lto.o -rdynamic -Xlinker -no_deduplicate -Xlinker -objc_abi_version -Xlinker 2 -Xlinker -debug_variant -Xlinker -dependency_info -Xlinker /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVaultUITests.build/Objects-normal/arm64/FocusVaultUITests_dependency_info.dat -fobjc-link-runtime -fprofile-instr-generate -L/Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphonesimulator -L/usr/lib/swift -Xlinker -add_ast_path -Xlinker /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVaultUITests.build/Objects-normal/arm64/FocusVaultUITests.swiftmodule -framework XCTest -lXCTestSwiftSupport -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __entitlements -Xlinker /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVaultUITests.build/FocusVaultUITests.xctest-Simulated.xcent -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __ents_der -Xlinker /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVaultUITests.build/FocusVaultUITests.xctest-Simulated.xcent.der -Xlinker -no_adhoc_codesign -o /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Products/Debug-iphonesimulator/FocusVaultUITests-Runner.app/PlugIns/FocusVaultUITests.xctest/FocusVaultUITests
 
+ExtractAppIntentsMetadata (in target 'FocusVaultUITests' from project 'FocusVault')
+    cd /Users/runner/work/focus-vault-ios/focus-vault-ios
+    /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name FocusVaultUITests --sdk-root /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk --xcode-version 16F6 --platform-family iOS --deployment-target 16.0 --bundle-identifier com.sim360.focusvault.uitests --output /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Products/Debug-iphonesimulator/FocusVaultUITests-Runner.app/PlugIns/FocusVaultUITests.xctest --target-triple arm64-apple-ios16.0-simulator --binary-file /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Products/Debug-iphonesimulator/FocusVaultUITests-Runner.app/PlugIns/FocusVaultUITests.xctest/FocusVaultUITests --dependency-file /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVaultUITests.build/Objects-normal/arm64/FocusVaultUITests_dependency_info.dat --stringsdata-file /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVaultUITests.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVaultUITests.build/Objects-normal/arm64/FocusVaultUITests.SwiftFileList --metadata-file-list /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVaultUITests.build/FocusVaultUITests.DependencyMetadataFileList --static-metadata-file-list /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVaultUITests.build/FocusVaultUITests.DependencyStaticMetadataFileList --swift-const-vals-list /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVaultUITests.build/Objects-normal/arm64/FocusVaultUITests.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --validate-assistant-intents --no-app-shortcuts-localization
+2026-10-29 06:46:44.520 appintentsmetadataprocessor[10517:41358] Starting appintentsmetadataprocessor export
+2026-10-29 06:46:44.522 appintentsmetadataprocessor[10517:41358] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+
 CopySwiftLibs /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Products/Debug-iphonesimulator/FocusVaultUITests-Runner.app/PlugIns/FocusVaultUITests.xctest (in target 'FocusVaultUITests' from project 'FocusVault')
     cd /Users/runner/work/focus-vault-ios/focus-vault-ios
     builtin-swiftStdLibTool --copy --verbose --sign - --scan-executable /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Products/Debug-iphonesimulator/FocusVaultUITests-Runner.app/PlugIns/FocusVaultUITests.xctest/FocusVaultUITests --scan-folder /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Products/Debug-iphonesimulator/FocusVaultUITests-Runner.app/PlugIns/FocusVaultUITests.xctest/Frameworks --scan-folder /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Products/Debug-iphonesimulator/FocusVaultUITests-Runner.app/PlugIns/FocusVaultUITests.xctest/PlugIns --scan-folder /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Products/Debug-iphonesimulator/FocusVaultUITests-Runner.app/PlugIns/FocusVaultUITests.xctest/SystemExtensions --scan-folder /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Products/Debug-iphonesimulator/FocusVaultUITests-Runner.app/PlugIns/FocusVaultUITests.xctest/Extensions --platform iphonesimulator --toolchain /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Products/Debug-iphonesimulator/FocusVaultUITests-Runner.app/PlugIns/FocusVaultUITests.xctest/Frameworks --strip-bitcode --scan-executable /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/lib/libXCTestSwiftSupport.dylib --strip-bitcode-tool /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVaultUITests.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os
 
-ExtractAppIntentsMetadata (in target 'FocusVaultUITests' from project 'FocusVault')
-    cd /Users/runner/work/focus-vault-ios/focus-vault-ios
-    /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name FocusVaultUITests --sdk-root /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator18.5.sdk --xcode-version 16F6 --platform-family iOS --deployment-target 16.0 --bundle-identifier com.sim360.focusvault.uitests --output /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Products/Debug-iphonesimulator/FocusVaultUITests-Runner.app/PlugIns/FocusVaultUITests.xctest --target-triple arm64-apple-ios16.0-simulator --binary-file /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Products/Debug-iphonesimulator/FocusVaultUITests-Runner.app/PlugIns/FocusVaultUITests.xctest/FocusVaultUITests --dependency-file /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVaultUITests.build/Objects-normal/arm64/FocusVaultUITests_dependency_info.dat --stringsdata-file /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVaultUITests.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVaultUITests.build/Objects-normal/arm64/FocusVaultUITests.SwiftFileList --metadata-file-list /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVaultUITests.build/FocusVaultUITests.DependencyMetadataFileList --static-metadata-file-list /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVaultUITests.build/FocusVaultUITests.DependencyStaticMetadataFileList --swift-const-vals-list /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Intermediates.noindex/FocusVault.build/Debug-iphonesimulator/FocusVaultUITests.build/Objects-normal/arm64/FocusVaultUITests.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --validate-assistant-intents --no-app-shortcuts-localization
-2026-10-29 04:51:16.336 appintentsmetadataprocessor[10722:43057] Starting appintentsmetadataprocessor export
-2026-10-29 04:51:16.338 appintentsmetadataprocessor[10722:43057] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
-
 CodeSign /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Products/Debug-iphonesimulator/FocusVaultUITests-Runner.app/PlugIns/FocusVaultUITests.xctest (in target 'FocusVaultUITests' from project 'FocusVault')
     cd /Users/runner/work/focus-vault-ios/focus-vault-ios
-
+    
     Signing Identity:     "Sign to Run Locally"
-
+    
     /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /Users/runner/Library/Developer/Xcode/DerivedData/FocusVault-cxwixmnkwtokuahbvggmfayjpqwr/Build/Products/Debug-iphonesimulator/FocusVaultUITests-Runner.app/PlugIns/FocusVaultUITests.xctest
 
-2026-10-29 04:52:41.165774+0000 FocusVaultUITests-Runner[13589:52985] [UIKit App Config] `UIScene` lifecycle will soon be required. Failure to adopt will result in an assert in the future.
-2026-10-29 04:52:41.168392+0000 FocusVaultUITests-Runner[13589:52985] [Default] Running tests...
-Test Suite 'All tests' started at 2026-10-29 04:52:49.374.
-Test Suite 'FocusVaultUITests.xctest' started at 2026-10-29 04:52:49.374.
-Test Suite 'FocusVaultUITests' started at 2026-10-29 04:52:49.375.
+2026-10-29 06:47:30.447989+0000 FocusVaultUITests-Runner[11286:45215] [UIKit App Config] `UIScene` lifecycle will soon be required. Failure to adopt will result in an assert in the future.
+2026-10-29 06:47:30.449922+0000 FocusVaultUITests-Runner[11286:45215] [Default] Running tests...
+2026-10-29 06:47:30.468843+0000 FocusVaultUITests-Runner[11286:45531] [General] Failed to send CA Event for app launch measurements for ca_event_type: 0 event_name: com.apple.app_launch_measurement.FirstFramePresentationMetric
+2026-10-29 06:47:30.511678+0000 FocusVaultUITests-Runner[11286:45529] [General] Failed to send CA Event for app launch measurements for ca_event_type: 1 event_name: com.apple.app_launch_measurement.ExtendedLaunchMetrics
+Test Suite 'All tests' started at 2026-10-29 06:47:39.745.
+Test Suite 'FocusVaultUITests.xctest' started at 2026-10-29 06:47:39.746.
+Test Suite 'FocusVaultUITests' started at 2026-10-29 06:47:39.746.
 Test Case '-[FocusVaultUITests.FocusVaultUITests testFirstRunTimerAndVaultFlowFitsScreen]' started.
-    t =     0.00s Start Test at 2026-10-29 04:52:49.375
-    t =     0.87s Set Up
-    t =     0.96s Open com.sim360.focusvault
-    t =     0.96s     Launch com.sim360.focusvault
-    t =     8.94s         Setting up automation session
-    t =    10.02s         Wait for com.sim360.focusvault to idle
-    t =    12.44s Waiting 5.0s for "设置私人空间" NavigationBar to exist
-    t =    13.51s     Checking `Expect predicate `existsNoRetry == 1` for object "设置私人空间" NavigationBar`
-    t =    13.51s         Checking existence of `"设置私人空间" NavigationBar`
-    t =    14.14s Find the Window (First Match)
-    t =    14.48s Find the Window (First Match)
-    t =    14.64s Find the "设置私人空间" NavigationBar
-    t =    15.48s Added attachment named '01-first-run-password'
-    t =    15.48s Checking existence of `"setup-passcode" SecureTextField`
-    t =    15.68s Checking existence of `"setup-confirmation" SecureTextField`
-    t =    16.01s Tap "setup-passcode" SecureTextField
-    t =    16.01s     Wait for com.sim360.focusvault to idle
-    t =    16.23s     Find the "setup-passcode" SecureTextField
-    t =    16.85s     Check for interrupting elements affecting "setup-passcode" SecureTextField
-    t =    17.24s     Synthesize event
-    t =    17.87s     Wait for com.sim360.focusvault to idle
-    t =    18.72s Type '<redacted>' into "setup-passcode" SecureTextField
-    t =    18.72s     Wait for com.sim360.focusvault to idle
-    t =    19.05s     Find the "setup-passcode" SecureTextField
-    t =    20.20s     Check for interrupting elements affecting "setup-passcode" SecureTextField
-    t =    20.66s     Synthesize event
-    t =    21.18s     Wait for com.sim360.focusvault to idle
-    t =    21.52s Tap "setup-confirmation" SecureTextField
-    t =    21.52s     Wait for com.sim360.focusvault to idle
-    t =    21.53s     Find the "setup-confirmation" SecureTextField
-    t =    22.69s     Check for interrupting elements affecting "setup-confirmation" SecureTextField
-    t =    23.45s     Synthesize event
-    t =    24.01s     Wait for com.sim360.focusvault to idle
-    t =    24.04s Type '<redacted>' into "setup-confirmation" SecureTextField
-    t =    24.04s     Wait for com.sim360.focusvault to idle
-    t =    24.20s     Find the "setup-confirmation" SecureTextField
-    t =    26.67s     Check for interrupting elements affecting "setup-confirmation" SecureTextField
-    t =    27.44s     Synthesize event
-    t =    27.89s     Wait for com.sim360.focusvault to idle
-    t =    28.18s Tap "setup-create" Button
-    t =    28.18s     Wait for com.sim360.focusvault to idle
-    t =    28.19s     Find the "setup-create" Button
-    t =    28.58s     Check for interrupting elements affecting "setup-create" Button
-    t =    29.95s     Synthesize event
-    t =    30.67s     Wait for com.sim360.focusvault to idle
-    t =    30.97s Waiting 5.0s for "设置私人空间" NavigationBar to not exist
-    t =    32.00s     Checking `Expect predicate `existsNoRetry == 0` for object "设置私人空间" NavigationBar`
-    t =    32.00s         Checking existence of `"设置私人空间" NavigationBar`
-    t =    32.97s Waiting 5.0s for "计时器" NavigationBar to exist
-    t =    34.02s     Checking `Expect predicate `existsNoRetry == 1` for object "计时器" NavigationBar`
-    t =    34.02s         Checking existence of `"计时器" NavigationBar`
-    t =    35.36s Checking existence of `"timer-duration" TextField`
-    t =    35.62s Find the Window (First Match)
-    t =    35.73s Find the "timer-duration" TextField
-    t =    36.16s Added attachment named '02-manual-timer-portrait'
-    t =    36.16s Setting device orientation to Landscape Left
-    t =    36.17s     Device orientation changed to Landscape Left
-    t =    36.26s     Interface orientation changed to Landscape Right
-    t =    36.26s     Wait for com.sim360.focusvault to idle
-    t =    36.99s Waiting 3.0s for "计时器" NavigationBar to exist
-    t =    38.05s     Checking `Expect predicate `existsNoRetry == 1` for object "计时器" NavigationBar`
-    t =    38.05s         Checking existence of `"计时器" NavigationBar`
-    t =    38.08s Checking existence of `"timer-duration" TextField`
-    t =    38.10s Swipe up Target Application 'com.sim360.focusvault'
-    t =    38.10s     Wait for com.sim360.focusvault to idle
-    t =    38.10s     Find the Target Application 'com.sim360.focusvault'
-    t =    38.13s     Check for interrupting elements affecting "计时器" Application
-    t =    38.17s     Synthesize event
-    t =    38.62s     Wait for com.sim360.focusvault to idle
-    t =    39.32s Checking existence of `"timer-start" Button`
-    t =    39.48s Added attachment named '03-manual-timer-landscape'
-    t =    39.48s Setting device orientation to Portrait
-    t =    39.48s     Device orientation changed to Portrait
-    t =    39.55s     Interface orientation changed to Portrait
-    t =    39.56s     Wait for com.sim360.focusvault to idle
-    t =    39.92s Swipe down Target Application 'com.sim360.focusvault'
-    t =    39.92s     Wait for com.sim360.focusvault to idle
-    t =    39.93s     Find the Target Application 'com.sim360.focusvault'
-    t =    40.03s     Check for interrupting elements affecting "计时器" Application
-    t =    40.07s     Synthesize event
-    t =    40.51s     Wait for com.sim360.focusvault to idle
-    t =    41.01s Tap "timer-duration" TextField
-    t =    41.01s     Wait for com.sim360.focusvault to idle
-    t =    41.01s     Find the "timer-duration" TextField
-    t =    41.03s     Check for interrupting elements affecting "timer-duration" TextField
-    t =    41.06s     Synthesize event
-    t =    41.37s     Wait for com.sim360.focusvault to idle
-    t =    41.74s Tap "timer-duration" TextField[0.92, 0.50]
-    t =    41.74s     Wait for com.sim360.focusvault to idle
-    t =    41.75s     Find the "timer-duration" TextField
-    t =    41.85s     Check for interrupting elements affecting "timer-duration" TextField
-    t =    41.89s     Synthesize event
-    t =    41.90s         Find the "timer-duration" TextField
-    t =    41.96s         Find the "timer-duration" TextField
-    t =    42.01s         Find the "timer-duration" TextField
-    t =    42.33s     Wait for com.sim360.focusvault to idle
-    t =    42.33s Type '...' into "timer-duration" TextField
-    t =    42.33s     Wait for com.sim360.focusvault to idle
-    t =    42.34s     Find the "timer-duration" TextField
-    t =    42.47s     Check for interrupting elements affecting "timer-duration" TextField
-    t =    42.53s     Synthesize event
-    t =    43.40s     Wait for com.sim360.focusvault to idle
-    t =    43.41s Type 'wrong-password' into "timer-duration" TextField
-    t =    43.41s     Wait for com.sim360.focusvault to idle
-    t =    43.41s     Find the "timer-duration" TextField
-    t =    43.48s     Check for interrupting elements affecting "timer-duration" TextField
-    t =    43.53s     Synthesize event
-    t =    43.97s     Wait for com.sim360.focusvault to idle
-    t =    44.01s Find the "timer-duration" TextField
-    t =    44.07s Tap "timer-start" Button
-    t =    44.07s     Wait for com.sim360.focusvault to idle
-    t =    44.07s     Find the "timer-start" Button
-    t =    44.13s     Check for interrupting elements affecting "timer-start" Button
-    t =    44.17s     Synthesize event
-    t =    44.19s         Scroll element to visible
-    t =    44.19s         Find the "timer-start" Button
-    t =    44.26s         Computed hit point {220, 376.83333333333331} after scrolling to visible
-    t =    44.55s     Wait for com.sim360.focusvault to idle
-    t =    44.94s Waiting 3.0s for "计时中" StaticText to exist
-    t =    45.95s     Checking `Expect predicate `existsNoRetry == 1` for object "计时中" StaticText`
-    t =    45.95s         Checking existence of `"计时中" StaticText`
-    t =    45.98s Tap "结束" Button
-    t =    45.98s     Wait for com.sim360.focusvault to idle
-    t =    45.98s     Find the "结束" Button
-    t =    46.01s     Check for interrupting elements affecting "结束" Button
-    t =    46.04s     Synthesize event
-    t =    46.34s     Wait for com.sim360.focusvault to idle
-    t =    47.37s Checking `Expect predicate `enabled == 1` for object "timer-duration" TextField`
-    t =    47.37s     Find the "timer-duration" TextField
-    t =    47.49s Tap "timer-duration" TextField
-    t =    47.49s     Wait for com.sim360.focusvault to idle
-    t =    47.50s     Find the "timer-duration" TextField
-    t =    47.53s     Check for interrupting elements affecting "timer-duration" TextField
-    t =    47.57s     Synthesize event
-    t =    47.88s     Wait for com.sim360.focusvault to idle
-    t =    48.20s Tap "timer-duration" TextField[0.92, 0.50]
-    t =    48.20s     Wait for com.sim360.focusvault to idle
-    t =    48.21s     Find the "timer-duration" TextField
-    t =    48.27s     Check for interrupting elements affecting "timer-duration" TextField
-    t =    48.32s     Synthesize event
-    t =    48.32s         Find the "timer-duration" TextField
-    t =    48.37s         Find the "timer-duration" TextField
-    t =    48.43s         Find the "timer-duration" TextField
-    t =    48.77s     Wait for com.sim360.focusvault to idle
-    t =    48.80s Type '...' into "timer-duration" TextField
-    t =    48.80s     Wait for com.sim360.focusvault to idle
-    t =    49.19s     Find the "timer-duration" TextField
-    t =    49.27s     Check for interrupting elements affecting "timer-duration" TextField
-    t =    49.34s     Synthesize event
-    t =    50.21s     Wait for com.sim360.focusvault to idle
-    t =    50.21s Type '12345678' into "timer-duration" TextField
-    t =    50.21s     Wait for com.sim360.focusvault to idle
-    t =    50.21s     Find the "timer-duration" TextField
-    t =    50.26s     Check for interrupting elements affecting "timer-duration" TextField
-    t =    50.30s     Synthesize event
-    t =    50.64s     Wait for com.sim360.focusvault to idle
-    t =    50.78s Find the "timer-duration" TextField
-    t =    50.84s Tap "timer-start" Button
-    t =    50.84s     Wait for com.sim360.focusvault to idle
-    t =    50.85s     Find the "timer-start" Button
-    t =    50.89s     Check for interrupting elements affecting "timer-start" Button
-    t =    50.92s     Synthesize event
-    t =    51.21s     Wait for com.sim360.focusvault to idle
-    t =    51.47s Waiting 5.0s for "私人空间" NavigationBar to exist
-    t =    52.52s     Checking `Expect predicate `existsNoRetry == 1` for object "私人空间" NavigationBar`
-    t =    52.52s         Checking existence of `"私人空间" NavigationBar`
-    t =    52.56s Find the Window (First Match)
-    t =    52.57s Find the "私人空间" NavigationBar
-    t =    52.74s Added attachment named '04-private-vault-empty'
-    t =    52.74s Tear Down
-Test Case '-[FocusVaultUITests.FocusVaultUITests testFirstRunTimerAndVaultFlowFitsScreen]' passed (52.990 seconds).
-Test Suite 'FocusVaultUITests' passed at 2026-10-29 04:53:42.365.
-	 Executed 1 test, with 0 failures (0 unexpected) in 52.990 (52.991) seconds
-Test Suite 'FocusVaultUITests.xctest' passed at 2026-10-29 04:53:42.366.
-	 Executed 1 test, with 0 failures (0 unexpected) in 52.990 (52.992) seconds
-Test Suite 'All tests' passed at 2026-10-29 04:53:42.366.
-	 Executed 1 test, with 0 failures (0 unexpected) in 52.990 (52.992) seconds
-2026-10-29 04:53:42.829 xcodebuild[9988:40870] [MT] IDETestOperationsObserverDebug: 146.469 elapsed -- Testing started completed.
-2026-10-29 04:53:42.829 xcodebuild[9988:40870] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
-2026-10-29 04:53:42.829 xcodebuild[9988:40870] [MT] IDETestOperationsObserverDebug: 146.469 sec, +146.469 sec -- end
+    t =     0.00s Start Test at 2026-10-29 06:47:39.746
+    t =     0.49s Set Up
+    t =     0.51s Open com.sim360.focusvault
+    t =     0.51s     Launch com.sim360.focusvault
+    t =     5.06s         Setting up automation session
+    t =     5.39s         Wait for com.sim360.focusvault to idle
+    t =     7.48s Waiting 5.0s for "设置私人空间" NavigationBar to exist
+    t =     8.53s     Checking `Expect predicate `existsNoRetry == 1` for object "设置私人空间" NavigationBar`
+    t =     8.53s         Checking existence of `"设置私人空间" NavigationBar`
+    t =     9.09s Find the Window (First Match)
+    t =     9.27s Find the Window (First Match)
+    t =     9.50s Find the "设置私人空间" NavigationBar
+    t =    10.23s Added attachment named '01-first-run-password'
+    t =    10.23s Checking existence of `"setup-passcode" SecureTextField`
+    t =    10.66s Checking existence of `"setup-confirmation" SecureTextField`
+    t =    10.79s Tap "setup-passcode" SecureTextField
+    t =    10.79s     Wait for com.sim360.focusvault to idle
+    t =    10.80s     Find the "setup-passcode" SecureTextField
+    t =    10.93s     Check for interrupting elements affecting "setup-passcode" SecureTextField
+    t =    11.00s     Synthesize event
+    t =    11.55s     Wait for com.sim360.focusvault to idle
+    t =    12.15s Type '<redacted>' into "setup-passcode" SecureTextField
+    t =    12.15s     Wait for com.sim360.focusvault to idle
+    t =    12.50s     Find the "setup-passcode" SecureTextField
+    t =    13.20s     Check for interrupting elements affecting "setup-passcode" SecureTextField
+    t =    13.36s     Synthesize event
+    t =    13.69s     Wait for com.sim360.focusvault to idle
+    t =    13.69s Tap "setup-confirmation" SecureTextField
+    t =    13.69s     Wait for com.sim360.focusvault to idle
+    t =    13.70s     Find the "setup-confirmation" SecureTextField
+    t =    13.78s     Check for interrupting elements affecting "setup-confirmation" SecureTextField
+    t =    13.84s     Synthesize event
+    t =    14.13s     Wait for com.sim360.focusvault to idle
+    t =    14.18s Type '<redacted>' into "setup-confirmation" SecureTextField
+    t =    14.18s     Wait for com.sim360.focusvault to idle
+    t =    14.20s     Find the "setup-confirmation" SecureTextField
+    t =    14.35s     Check for interrupting elements affecting "setup-confirmation" SecureTextField
+    t =    14.65s     Synthesize event
+    t =    14.99s     Wait for com.sim360.focusvault to idle
+    t =    14.99s Tap "setup-create" Button
+    t =    14.99s     Wait for com.sim360.focusvault to idle
+    t =    15.01s     Find the "setup-create" Button
+    t =    15.08s     Check for interrupting elements affecting "setup-create" Button
+    t =    15.18s     Synthesize event
+    t =    15.53s     Wait for com.sim360.focusvault to idle
+    t =    16.06s Waiting 5.0s for "设置私人空间" NavigationBar to not exist
+    t =    17.13s     Checking `Expect predicate `existsNoRetry == 0` for object "设置私人空间" NavigationBar`
+    t =    17.13s         Checking existence of `"设置私人空间" NavigationBar`
+    t =    17.20s Waiting 5.0s for "计时器" NavigationBar to exist
+    t =    18.23s     Checking `Expect predicate `existsNoRetry == 1` for object "计时器" NavigationBar`
+    t =    18.24s         Checking existence of `"计时器" NavigationBar`
+    t =    18.48s Checking existence of `"timer-duration" TextField`
+    t =    18.92s Find the Window (First Match)
+    t =    19.06s Find the "timer-duration" TextField
+    t =    19.15s Tap "timer-duration" TextField
+    t =    19.16s     Wait for com.sim360.focusvault to idle
+    t =    19.17s     Find the "timer-duration" TextField
+    t =    19.24s     Check for interrupting elements affecting "timer-duration" TextField
+    t =    19.29s     Synthesize event
+    t =    19.60s     Wait for com.sim360.focusvault to idle
+    t =    19.88s Waiting 2.0s for "1" Key to exist
+    t =    20.95s     Checking `Expect predicate `existsNoRetry == 1` for object "1" Key`
+    t =    20.95s         Checking existence of `"1" Key`
+    t =    21.00s Checking existence of `"Q" Key`
+    t =    21.03s Tap "完成" Button
+    t =    21.03s     Wait for com.sim360.focusvault to idle
+    t =    21.03s     Find the "完成" Button
+    t =    21.06s     Check for interrupting elements affecting "完成" Button
+    t =    21.10s     Synthesize event
+    t =    21.39s     Wait for com.sim360.focusvault to idle
+    t =    21.85s Added attachment named '02-manual-timer-portrait'
+    t =    21.85s Setting device orientation to Landscape Left
+    t =    21.85s     Device orientation changed to Landscape Left
+    t =    22.01s     Interface orientation changed to Landscape Right
+    t =    22.02s     Wait for com.sim360.focusvault to idle
+    t =    22.33s Waiting 3.0s for "计时器" NavigationBar to exist
+    t =    23.37s     Checking `Expect predicate `existsNoRetry == 1` for object "计时器" NavigationBar`
+    t =    23.37s         Checking existence of `"计时器" NavigationBar`
+    t =    23.41s Checking existence of `"timer-duration" TextField`
+    t =    23.46s Swipe up Target Application 'com.sim360.focusvault'
+    t =    23.46s     Wait for com.sim360.focusvault to idle
+    t =    23.46s     Find the Target Application 'com.sim360.focusvault'
+    t =    23.51s     Check for interrupting elements affecting "计时器" Application
+    t =    23.54s     Synthesize event
+    t =    23.97s     Wait for com.sim360.focusvault to idle
+    t =    24.69s Checking existence of `"timer-start" Button`
+    t =    24.86s Added attachment named '03-manual-timer-landscape'
+    t =    24.86s Setting device orientation to Portrait
+    t =    24.86s     Device orientation changed to Portrait
+    t =    24.92s     Interface orientation changed to Portrait
+    t =    24.92s     Wait for com.sim360.focusvault to idle
+    t =    24.94s Swipe down Target Application 'com.sim360.focusvault'
+    t =    24.94s     Wait for com.sim360.focusvault to idle
+    t =    24.94s     Find the Target Application 'com.sim360.focusvault'
+    t =    24.97s     Check for interrupting elements affecting "计时器" Application
+    t =    25.00s     Synthesize event
+    t =    30.44s     Wait for com.sim360.focusvault to idle
+    t =    30.44s Tap "timer-duration" TextField
+    t =    30.44s     Wait for com.sim360.focusvault to idle
+    t =    30.45s     Find the "timer-duration" TextField
+    t =    30.47s     Check for interrupting elements affecting "timer-duration" TextField
+    t =    30.49s     Synthesize event
+    t =    30.79s     Wait for com.sim360.focusvault to idle
+    t =    31.12s Tap "timer-duration" TextField[0.92, 0.50]
+    t =    31.12s     Wait for com.sim360.focusvault to idle
+    t =    31.13s     Find the "timer-duration" TextField
+    t =    31.17s     Check for interrupting elements affecting "timer-duration" TextField
+    t =    31.21s     Synthesize event
+    t =    31.21s         Find the "timer-duration" TextField
+    t =    31.25s         Find the "timer-duration" TextField
+    t =    31.29s         Find the "timer-duration" TextField
+    t =    31.62s     Wait for com.sim360.focusvault to idle
+    t =    31.67s Type '...' into "timer-duration" TextField
+    t =    31.67s     Wait for com.sim360.focusvault to idle
+    t =    32.06s     Find the "timer-duration" TextField
+    t =    32.11s     Check for interrupting elements affecting "timer-duration" TextField
+    t =    32.15s     Synthesize event
+    t =    33.02s     Wait for com.sim360.focusvault to idle
+    t =    33.04s Type '11111111' into "timer-duration" TextField
+    t =    33.04s     Wait for com.sim360.focusvault to idle
+    t =    33.09s     Find the "timer-duration" TextField
+    t =    33.17s     Check for interrupting elements affecting "timer-duration" TextField
+    t =    33.20s     Synthesize event
+    t =    33.54s     Wait for com.sim360.focusvault to idle
+    t =    33.67s Find the "timer-duration" TextField
+    t =    33.70s Tap "timer-start" Button
+    t =    33.70s     Wait for com.sim360.focusvault to idle
+    t =    33.70s     Find the "timer-start" Button
+    t =    33.72s     Check for interrupting elements affecting "timer-start" Button
+    t =    33.75s     Synthesize event
+    t =    34.04s     Wait for com.sim360.focusvault to idle
+    t =    34.38s Waiting 3.0s for "计时中" StaticText to exist
+    t =    35.43s     Checking `Expect predicate `existsNoRetry == 1` for object "计时中" StaticText`
+    t =    35.43s         Checking existence of `"计时中" StaticText`
+    t =    35.46s Tap "结束" Button
+    t =    35.46s     Wait for com.sim360.focusvault to idle
+    t =    35.46s     Find the "结束" Button
+    t =    35.48s     Check for interrupting elements affecting "结束" Button
+    t =    35.50s     Synthesize event
+    t =    35.81s     Wait for com.sim360.focusvault to idle
+    t =    37.00s Checking `Expect predicate `enabled == 1` for object "timer-duration" TextField`
+    t =    37.00s     Find the "timer-duration" TextField
+    t =    38.56s Tap "timer-duration" TextField
+    t =    38.56s     Wait for com.sim360.focusvault to idle
+    t =    38.72s     Find the "timer-duration" TextField
+    t =    39.21s     Check for interrupting elements affecting "timer-duration" TextField
+    t =    39.57s     Synthesize event
+    t =    40.49s     Wait for com.sim360.focusvault to idle
+    t =    40.81s Tap "timer-duration" TextField[0.92, 0.50]
+    t =    40.81s     Wait for com.sim360.focusvault to idle
+    t =    40.89s     Find the "timer-duration" TextField
+    t =    41.39s     Check for interrupting elements affecting "timer-duration" TextField
+    t =    41.72s     Synthesize event
+    t =    41.80s         Find the "timer-duration" TextField
+    t =    42.48s         Find the "timer-duration" TextField
+    t =    43.34s         Find the "timer-duration" TextField
+    t =    44.44s     Wait for com.sim360.focusvault to idle
+    t =    45.09s Type '...' into "timer-duration" TextField
+    t =    45.09s     Wait for com.sim360.focusvault to idle
+    t =    45.09s     Find the "timer-duration" TextField
+    t =    45.50s     Check for interrupting elements affecting "timer-duration" TextField
+    t =    45.84s     Synthesize event
+    t =    46.97s     Wait for com.sim360.focusvault to idle
+    t =    47.14s Type '12345678' into "timer-duration" TextField
+    t =    47.14s     Wait for com.sim360.focusvault to idle
+    t =    47.23s     Find the "timer-duration" TextField
+    t =    48.80s     Check for interrupting elements affecting "timer-duration" TextField
+    t =    48.88s     Synthesize event
+    t =    49.23s     Wait for com.sim360.focusvault to idle
+    t =    49.39s Find the "timer-duration" TextField
+    t =    49.63s Tap "timer-start" Button
+    t =    49.63s     Wait for com.sim360.focusvault to idle
+    t =    49.64s     Find the "timer-start" Button
+    t =    49.69s     Check for interrupting elements affecting "timer-start" Button
+    t =    49.80s     Synthesize event
+    t =    50.11s     Wait for com.sim360.focusvault to idle
+    t =    50.81s Waiting 5.0s for "私人空间" NavigationBar to exist
+    t =    51.88s     Checking `Expect predicate `existsNoRetry == 1` for object "私人空间" NavigationBar`
+    t =    51.88s         Checking existence of `"私人空间" NavigationBar`
+    t =    52.00s Find the Window (First Match)
+    t =    52.03s Find the "私人空间" NavigationBar
+    t =    52.20s Added attachment named '04-private-vault-empty'
+    t =    52.20s Tear Down
+Test Case '-[FocusVaultUITests.FocusVaultUITests testFirstRunTimerAndVaultFlowFitsScreen]' passed (52.512 seconds).
+Test Suite 'FocusVaultUITests' passed at 2026-10-29 06:48:32.259.
+	 Executed 1 test, with 0 failures (0 unexpected) in 52.512 (52.513) seconds
+Test Suite 'FocusVaultUITests.xctest' passed at 2026-10-29 06:48:32.260.
+	 Executed 1 test, with 0 failures (0 unexpected) in 52.512 (52.514) seconds
+Test Suite 'All tests' passed at 2026-10-29 06:48:32.261.
+	 Executed 1 test, with 0 failures (0 unexpected) in 52.512 (52.516) seconds
+2026-10-29 06:48:33.032 xcodebuild[10240:40460] [MT] IDETestOperationsObserverDebug: 108.487 elapsed -- Testing started completed.
+2026-10-29 06:48:33.032 xcodebuild[10240:40460] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-29 06:48:33.032 xcodebuild[10240:40460] [MT] IDETestOperationsObserverDebug: 108.487 sec, +108.487 sec -- end
 
 Test session results, code coverage, and logs:
 	/Users/runner/work/focus-vault-ios/focus-vault-ios/build/UITest-ProMax.xcresult
