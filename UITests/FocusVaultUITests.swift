@@ -62,6 +62,8 @@ final class FocusVaultUITests: XCTestCase {
 
     private func replaceText(in field: XCUIElement, with value: String) {
         field.tap()
+        let rightEdge = field.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5))
+        rightEdge.tap()
         field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 40))
         field.typeText(value)
         XCTAssertEqual(field.value as? String, value)

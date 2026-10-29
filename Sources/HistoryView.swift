@@ -8,6 +8,7 @@ struct HistoryView: View {
     }
 
     @EnvironmentObject private var timerStore: FocusTimerStore
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var searchText = ""
 
     private var filteredSessions: [FocusSession] {
@@ -71,16 +72,34 @@ struct HistoryView: View {
 
     private var summarySection: some View {
         Section {
-            HStack {
-                summaryValue(title: "完成次数", value: "\(timerStore.sessions.filter { $0.outcome == .completed }.count)")
-                Divider()
-                summaryValue(
-                    title: "计时时长",
-                    value: "\(timerStore.sessions.reduce(0) { $0 + $1.focusedSeconds } / 60) 分钟"
-                )
+            ViewThatFits(in: .horizontal) {
+                HStack {
+                    completedSummary
+                    Divider()
+                    durationSummary
+                }
+                VStack(alignment: .leading, spacing: 16) {
+                    completedSummary
+                    Divider()
+                    durationSummary
+                }
             }
             .padding(.vertical, 8)
         }
+    }
+
+    private var completedSummary: some View {
+        summaryValue(
+            title: "完成次数",
+            value: "\(timerStore.sessions.filter { $0.outcome == .completed }.count)"
+        )
+    }
+
+    private var durationSummary: some View {
+        summaryValue(
+            title: "计时时长",
+            value: "\(timerStore.sessions.reduce(0) { $0 + $1.focusedSeconds } / 60) 分钟"
+        )
     }
 
     private func summaryValue(title: String, value: String) -> some View {
@@ -96,6 +115,21 @@ struct HistoryView: View {
     }
 
     private func sessionRow(_ session: FocusSession) -> some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 12) {
+                sessionIdentity(session)
+                Spacer(minLength: 8)
+                durationLabel(session)
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                sessionIdentity(session)
+                durationLabel(session)
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private func sessionIdentity(_ session: FocusSession) -> some View {
         HStack(spacing: 12) {
             Image(systemName: session.outcome == .completed ? "checkmark.circle.fill" : "stop.circle")
                 .font(.title3)
@@ -107,12 +141,15 @@ struct HistoryView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            Spacer()
-            Text("\(session.focusedSeconds / 60) 分钟")
-                .font(.subheadline.monospacedDigit())
-                .foregroundStyle(.secondary)
         }
-        .accessibilityElement(children: .combine)
+        .layoutPriority(1)
+    }
+
+    private func durationLabel(_ session: FocusSession) -> some View {
+        Text("\(session.focusedSeconds / 60) 分钟")
+            .font(.subheadline.monospacedDigit())
+            .foregroundStyle(.secondary)
+            .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
     }
 }
 

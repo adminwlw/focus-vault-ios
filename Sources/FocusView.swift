@@ -3,10 +3,19 @@ import SwiftUI
 struct FocusView: View {
     @EnvironmentObject private var store: FocusTimerStore
     @EnvironmentObject private var authStore: VaultAuthStore
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var taskName = "计时"
     @State private var durationInput = "25"
     @State private var lastValidMinutes = 25
+    @FocusState private var focusedField: Field?
+    @ScaledMetric(relativeTo: .largeTitle) private var timerTextSize: CGFloat = 56
     let onVaultUnlocked: () -> Void
+
+    private enum Field: Hashable {
+        case duration
+        case taskName
+    }
 
     private var isEditable: Bool {
         store.state.phase == .idle || store.state.phase == .finished
@@ -28,7 +37,14 @@ struct FocusView: View {
                 .frame(maxWidth: .infinity)
             }
             .background(Color(uiColor: .systemGroupedBackground))
+            .scrollDismissesKeyboard(.interactively)
             .navigationTitle("计时器")
+            .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("完成") { focusedField = nil }
+                }
+            }
             .onAppear {
                 taskName = store.state.taskName == "专注任务" ? "计时" : store.state.taskName
                 lastValidMinutes = max(1, store.state.plannedSeconds / 60)
@@ -39,7 +55,8 @@ struct FocusView: View {
 
     private var timerDial: some View {
         GeometryReader { proxy in
-            let size = min(proxy.size.width, 270)
+            let maximumSize: CGFloat = dynamicTypeSize.isAccessibilitySize ? 236 : 270
+            let size = min(proxy.size.width, maximumSize)
             ZStack {
                 Circle()
                     .stroke(Color.secondary.opacity(0.14), lineWidth: 10)
@@ -50,11 +67,11 @@ struct FocusView: View {
                         style: StrokeStyle(lineWidth: 10, lineCap: .round)
                     )
                     .rotationEffect(.degrees(-90))
-                    .animation(.easeInOut(duration: 0.35), value: store.progress)
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.35), value: store.progress)
 
                 VStack(spacing: 8) {
                     Text(formattedTime(store.remainingSeconds))
-                        .font(.system(size: 56, weight: .thin, design: .rounded))
+                        .font(.system(size: min(timerTextSize, 72), weight: .thin, design: .rounded))
                         .monospacedDigit()
                         .minimumScaleFactor(0.62)
                         .lineLimit(1)
@@ -69,47 +86,75 @@ struct FocusView: View {
             .frame(width: size, height: size)
             .frame(maxWidth: .infinity)
         }
-        .frame(height: 270)
+        .frame(height: dynamicTypeSize.isAccessibilitySize ? 236 : 270)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("剩余时间 \(formattedTime(store.remainingSeconds))，\(phaseLabel)")
     }
 
     private var manualTimerEditor: some View {
         VStack(spacing: 14) {
-            HStack {
-                Text("计时时长")
-                    .font(.body.weight(.medium))
-                Spacer()
-                TextField("分钟", text: $durationInput)
-                    .multilineTextAlignment(.trailing)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .submitLabel(.go)
-                    .frame(minWidth: 92, maxWidth: 180)
-                    .disabled(!isEditable)
-                    .onSubmit { startOrUnlock() }
-                    .accessibilityIdentifier("timer-duration")
-                Text("分钟")
-                    .foregroundStyle(.secondary)
+            ViewThatFits(in: .horizontal) {
+                HStack {
+                    timerFieldLabel("计时时长")
+                    Spacer()
+                    durationField
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    timerFieldLabel("计时时长")
+                    durationField
+                }
             }
 
             Divider()
 
-            HStack {
-                Text("名称")
-                    .font(.body.weight(.medium))
-                Spacer()
-                TextField("计时", text: $taskName)
-                    .multilineTextAlignment(.trailing)
-                    .submitLabel(.done)
-                    .frame(minWidth: 120, maxWidth: 260)
-                    .disabled(!isEditable)
-                    .accessibilityIdentifier("timer-name")
+            ViewThatFits(in: .horizontal) {
+                HStack {
+                    timerFieldLabel("名称")
+                    Spacer()
+                    taskNameField
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    timerFieldLabel("名称")
+                    taskNameField
+                }
             }
         }
         .padding(18)
         .background(.background, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .accessibilityElement(children: .contain)
+    }
+
+    private var durationField: some View {
+        HStack(spacing: 8) {
+            TextField("分钟", text: $durationInput)
+                .multilineTextAlignment(.trailing)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .submitLabel(.go)
+                .focused($focusedField, equals: .duration)
+                .frame(minWidth: 92, maxWidth: 180)
+                .disabled(!isEditable)
+                .onSubmit { startOrUnlock() }
+                .accessibilityIdentifier("timer-duration")
+            Text("分钟")
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: dynamicTypeSize.isAccessibilitySize ? .infinity : 220, alignment: .trailing)
+    }
+
+    private var taskNameField: some View {
+        TextField("计时", text: $taskName)
+            .multilineTextAlignment(.trailing)
+            .submitLabel(.done)
+            .focused($focusedField, equals: .taskName)
+            .frame(minWidth: 120, maxWidth: dynamicTypeSize.isAccessibilitySize ? .infinity : 260)
+            .disabled(!isEditable)
+            .accessibilityIdentifier("timer-name")
+    }
+
+    private func timerFieldLabel(_ title: String) -> some View {
+        Text(title)
+            .font(.body.weight(.medium))
     }
 
     @ViewBuilder
@@ -125,7 +170,7 @@ struct FocusView: View {
             .accessibilityIdentifier("timer-start")
 
         case .running:
-            HStack(spacing: 12) {
+            adaptiveButtonLayout {
                 Button {
                     store.pause()
                 } label: {
@@ -145,7 +190,7 @@ struct FocusView: View {
             }
 
         case .paused:
-            HStack(spacing: 12) {
+            adaptiveButtonLayout {
                 Button {
                     store.resume()
                 } label: {
@@ -167,7 +212,7 @@ struct FocusView: View {
     }
 
     private var quickDurations: some View {
-        HStack(spacing: 10) {
+        adaptiveButtonLayout {
             ForEach([5, 10, 30], id: \.self) { minutes in
                 Button {
                     lastValidMinutes = minutes
@@ -182,6 +227,13 @@ struct FocusView: View {
                 .disabled(!isEditable)
             }
         }
+    }
+
+    private var adaptiveButtonLayout: AnyLayout {
+        if dynamicTypeSize.isAccessibilitySize {
+            return AnyLayout(VStackLayout(alignment: .center, spacing: 10))
+        }
+        return AnyLayout(HStackLayout(alignment: .center, spacing: 10))
     }
 
     private var phaseLabel: String {
@@ -202,6 +254,7 @@ struct FocusView: View {
     }
 
     private func startOrUnlock() {
+        focusedField = nil
         let input = durationInput.trimmingCharacters(in: .whitespacesAndNewlines)
         if authStore.hasVault, authStore.verify(input, quietly: true) {
             durationInput = String(lastValidMinutes)

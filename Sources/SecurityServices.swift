@@ -272,6 +272,9 @@ final class VaultAuthStore: ObservableObject {
         guard new == confirmation, new.count >= 6 else {
             throw ValidationError("新口令至少需要 6 个字符，并且两次输入必须一致。")
         }
+        guard hint.isEmpty || !hint.localizedCaseInsensitiveContains(new) else {
+            throw ValidationError("提示词不能包含完整口令。")
+        }
         let salt = try CryptoBox.randomData(count: 16)
         let iterations = 210_000
         let record = AuthRecord(

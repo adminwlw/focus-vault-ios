@@ -174,7 +174,7 @@ final class FocusTimerStore: ObservableObject {
         (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])) ?? false
     }
 
-    private func refreshNotificationStatus() async {
+    func refreshNotificationStatus() async {
         let settings = await UNUserNotificationCenter.current().notificationSettings()
         notificationsDenied = settings.authorizationStatus == .denied
     }

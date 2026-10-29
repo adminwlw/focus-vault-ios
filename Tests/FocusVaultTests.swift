@@ -6,17 +6,39 @@ final class FocusVaultTests: XCTestCase {
     func testVaultAuthCreateLockAndVerify() throws {
         try? SecureStore.delete(account: "vault-auth-v1")
         try? SecureStore.delete(account: "vault-key-v1")
+        UserDefaults.standard.removeObject(forKey: "vault-passcode-hint")
         defer {
             try? SecureStore.delete(account: "vault-auth-v1")
             try? SecureStore.delete(account: "vault-key-v1")
+            UserDefaults.standard.removeObject(forKey: "vault-passcode-hint")
         }
 
         let store = VaultAuthStore()
-        try store.create(passcode: "vault123", confirmation: "vault123", hint: "")
+        try store.create(passcode: "vault123", confirmation: "vault123", hint: "旧提示")
+        XCTAssertEqual(store.hint, "旧提示")
         store.lock()
 
         XCTAssertFalse(store.verify("wrong-password", quietly: true))
         XCTAssertTrue(store.verify("vault123", quietly: true))
+
+        XCTAssertThrowsError(
+            try store.changePasscode(
+                current: "vault123",
+                new: "new-vault123",
+                confirmation: "new-vault123",
+                hint: "new-vault123 的提示"
+            )
+        )
+        try store.changePasscode(
+            current: "vault123",
+            new: "new-vault123",
+            confirmation: "new-vault123",
+            hint: "新的提示"
+        )
+        store.lock()
+        XCTAssertFalse(store.verify("vault123", quietly: true))
+        XCTAssertTrue(store.verify("new-vault123", quietly: true))
+        XCTAssertEqual(store.hint, "新的提示")
     }
 
     func testAESRoundTrip() throws {

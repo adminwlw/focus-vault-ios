@@ -31,6 +31,7 @@ struct RootView: View {
         }
         .fullScreenCover(isPresented: $showVault, onDismiss: lockVault) {
             VaultView(onLock: lockVault)
+                .privacySensitive()
         }
         .alert("无法打开私人空间", isPresented: Binding(
             get: { vaultError != nil },
@@ -59,6 +60,7 @@ struct RootView: View {
         .onChange(of: scenePhase) { newPhase in
             if newPhase == .active {
                 timerStore.refresh()
+                Task { await timerStore.refreshNotificationStatus() }
             } else {
                 lockVault()
             }

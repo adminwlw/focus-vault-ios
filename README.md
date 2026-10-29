@@ -24,7 +24,7 @@ xcodegen generate
 open FocusVault.xcodeproj
 ```
 
-GitHub Actions 会运行单元测试并生成未签名 IPA。未签名 IPA 只能验证构建产物，不能直接安装到普通 iPhone。真机安装需要为 `com.sim360.focusvault` 配置 Apple Developer 证书和匹配的描述文件，或由测试者使用自己的开发者身份重新签名。
+仓库中保留了可选的 macOS 自动构建工作流，但当前项目没有连接 GitHub 远端，也不会自动上传。未签名 IPA 只能验证构建产物，不能直接安装到普通 iPhone。真机安装需要为 `com.sim360.focusvault` 配置 Apple Developer 证书和匹配的描述文件，或由测试者使用自己的开发者身份重新签名。
 
 ## 数据边界
 

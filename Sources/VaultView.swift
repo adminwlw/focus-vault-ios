@@ -11,6 +11,7 @@ private enum VaultSortOrder: String, CaseIterable, Identifiable {
 
 struct VaultView: View {
     @EnvironmentObject private var store: VaultStore
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var pickerItems: [PhotosPickerItem] = []
     @State private var selectedAlbum: String?
     @State private var favoritesOnly = false
@@ -27,7 +28,10 @@ struct VaultView: View {
     @State private var confirmDeleteSystemOriginals = false
     let onLock: () -> Void
 
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 2), count: 3)
+    private var columns: [GridItem] {
+        let minimum: CGFloat = dynamicTypeSize.isAccessibilitySize ? 140 : 108
+        return [GridItem(.adaptive(minimum: minimum, maximum: 220), spacing: 2)]
+    }
 
     private var visibleItems: [VaultItem] {
         let filtered = store.activeItems.filter { item in
@@ -163,6 +167,9 @@ struct VaultView: View {
                 }
                 .buttonStyle(.borderedProminent)
             }
+            .frame(maxWidth: 560)
+            .frame(maxWidth: .infinity)
+            .padding(.bottom, 32)
         } else {
             ScrollView {
                 LazyVGrid(columns: columns, spacing: 2) {
@@ -223,11 +230,12 @@ struct VaultView: View {
         }
         ToolbarItemGroup(placement: .navigationBarTrailing) {
             if isSelecting {
-                Text("已选 \(selectedIDs.count) 项")
+                Text(dynamicTypeSize.isAccessibilitySize ? "\(selectedIDs.count) 项" : "已选 \(selectedIDs.count) 项")
                     .font(.subheadline.monospacedDigit())
             } else {
                 PhotosPicker(selection: $pickerItems, maxSelectionCount: 50, matching: .any(of: [.images, .videos])) {
-                    Image(systemName: "plus")
+                    Label("导入照片或视频", systemImage: "plus")
+                        .labelStyle(.iconOnly)
                 }
                 vaultMenu
             }
@@ -298,7 +306,8 @@ struct VaultView: View {
                 Label("管理私人空间", systemImage: "gearshape")
             }
         } label: {
-            Image(systemName: "ellipsis.circle")
+            Label("更多", systemImage: "ellipsis.circle")
+                .labelStyle(.iconOnly)
         }
     }
 
@@ -351,7 +360,7 @@ struct VaultView: View {
     }
 
     private var selectionBar: some View {
-        HStack(spacing: 28) {
+        selectionLayout {
             Button {
                 tryAction { try store.setFavorite(selectedIDs, value: true) }
                 finishSelection()
@@ -388,8 +397,16 @@ struct VaultView: View {
         }
         .labelStyle(.titleAndIcon)
         .frame(maxWidth: .infinity)
+        .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .background(.regularMaterial)
+    }
+
+    private var selectionLayout: AnyLayout {
+        if dynamicTypeSize.isAccessibilitySize {
+            return AnyLayout(VStackLayout(alignment: .center, spacing: 12))
+        }
+        return AnyLayout(HStackLayout(alignment: .center, spacing: 28))
     }
 
     private func finishSelection() {
@@ -452,6 +469,7 @@ private struct VaultGridCell: View {
         }
         .accessibilityLabel(item.mediaKind == .photo ? "照片" : "视频")
         .accessibilityValue(item.importedAt.formatted(date: .abbreviated, time: .shortened))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
@@ -496,7 +514,8 @@ private struct VaultDetailView: View {
                         Button {
                             confirmExport = true
                         } label: {
-                            Image(systemName: "square.and.arrow.up")
+                            Label("导出", systemImage: "square.and.arrow.up")
+                                .labelStyle(.iconOnly)
                         }
                         Menu {
                             Button {
@@ -510,7 +529,8 @@ private struct VaultDetailView: View {
                                 Label("移到最近删除", systemImage: "trash")
                             }
                         } label: {
-                            Image(systemName: "ellipsis.circle")
+                            Label("更多", systemImage: "ellipsis.circle")
+                                .labelStyle(.iconOnly)
                         }
                     }
                 }
@@ -592,31 +612,84 @@ private struct VaultDetailView: View {
     }
 }
 
-private struct ZoomableImage: View {
+private struct ZoomableImage: UIViewRepresentable {
     let image: UIImage
-    @State private var scale: CGFloat = 1
-    @State private var lastScale: CGFloat = 1
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    var body: some View {
-        Image(uiImage: image)
-            .resizable()
-            .scaledToFit()
-            .scaleEffect(scale)
-            .gesture(
-                MagnificationGesture()
-                    .onChanged { value in
-                        scale = min(max(lastScale * value, 1), 5)
-                    }
-                    .onEnded { _ in
-                        lastScale = scale
-                    }
-            )
-            .onTapGesture(count: 2) {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    scale = scale > 1 ? 1 : 2
-                    lastScale = scale
-                }
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    func makeUIView(context: Context) -> UIScrollView {
+        let scrollView = UIScrollView()
+        scrollView.backgroundColor = .black
+        scrollView.minimumZoomScale = 1
+        scrollView.maximumZoomScale = 5
+        scrollView.bouncesZoom = true
+        scrollView.showsHorizontalScrollIndicator = false
+        scrollView.showsVerticalScrollIndicator = false
+        scrollView.delegate = context.coordinator
+
+        let imageView = UIImageView(image: image)
+        imageView.contentMode = .scaleAspectFit
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.isAccessibilityElement = true
+        imageView.accessibilityLabel = "私人照片"
+        scrollView.addSubview(imageView)
+
+        NSLayoutConstraint.activate([
+            imageView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
+            imageView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
+            imageView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
+            imageView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
+            imageView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor),
+            imageView.heightAnchor.constraint(equalTo: scrollView.frameLayoutGuide.heightAnchor)
+        ])
+
+        context.coordinator.imageView = imageView
+        context.coordinator.reduceMotion = reduceMotion
+        let doubleTap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.didDoubleTap(_:)))
+        doubleTap.numberOfTapsRequired = 2
+        scrollView.addGestureRecognizer(doubleTap)
+        return scrollView
+    }
+
+    func updateUIView(_ scrollView: UIScrollView, context: Context) {
+        context.coordinator.imageView?.image = image
+        context.coordinator.reduceMotion = reduceMotion
+    }
+
+    final class Coordinator: NSObject, UIScrollViewDelegate {
+        weak var imageView: UIImageView?
+        var reduceMotion = false
+
+        func viewForZooming(in scrollView: UIScrollView) -> UIView? {
+            imageView
+        }
+
+        @objc func didDoubleTap(_ recognizer: UITapGestureRecognizer) {
+            guard let scrollView = recognizer.view as? UIScrollView,
+                  let imageView else { return }
+
+            if scrollView.zoomScale > scrollView.minimumZoomScale + 0.01 {
+                scrollView.setZoomScale(scrollView.minimumZoomScale, animated: !reduceMotion)
+                return
             }
+
+            let targetScale = min(2, scrollView.maximumZoomScale)
+            let point = recognizer.location(in: imageView)
+            let size = CGSize(
+                width: scrollView.bounds.width / targetScale,
+                height: scrollView.bounds.height / targetScale
+            )
+            let rect = CGRect(
+                x: point.x - size.width / 2,
+                y: point.y - size.height / 2,
+                width: size.width,
+                height: size.height
+            )
+            scrollView.zoom(to: rect, animated: !reduceMotion)
+        }
     }
 }
 
@@ -624,6 +697,8 @@ private struct RecentlyDeletedView: View {
     @EnvironmentObject private var store: VaultStore
     @Environment(\.dismiss) private var dismiss
     @State private var confirmEmpty = false
+    @State private var itemToDeletePermanently: VaultItem?
+    @State private var errorMessage: String?
 
     var body: some View {
         NavigationStack {
@@ -647,10 +722,13 @@ private struct RecentlyDeletedView: View {
                             }
                             Spacer()
                             Menu {
-                                Button("恢复") { try? store.restore(item) }
-                                Button("永久删除", role: .destructive) { try? store.deletePermanently(item) }
+                                Button("恢复") { perform { try store.restore(item) } }
+                                Button("永久删除", role: .destructive) {
+                                    itemToDeletePermanently = item
+                                }
                             } label: {
-                                Image(systemName: "ellipsis.circle")
+                                Label("更多操作", systemImage: "ellipsis.circle")
+                                    .labelStyle(.iconOnly)
                             }
                         }
                     }
@@ -669,12 +747,41 @@ private struct RecentlyDeletedView: View {
                 }
             }
             .confirmationDialog("永久删除全部项目？", isPresented: $confirmEmpty, titleVisibility: .visible) {
-                Button("永久删除", role: .destructive) { try? store.emptyTrash() }
+                Button("永久删除", role: .destructive) { perform { try store.emptyTrash() } }
                 Button("取消", role: .cancel) {}
             } message: {
                 Text("此操作无法撤销。")
             }
+            .confirmationDialog(
+                "永久删除此项目？",
+                isPresented: Binding(
+                    get: { itemToDeletePermanently != nil },
+                    set: { if !$0 { itemToDeletePermanently = nil } }
+                ),
+                titleVisibility: .visible
+            ) {
+                Button("永久删除", role: .destructive) {
+                    guard let item = itemToDeletePermanently else { return }
+                    itemToDeletePermanently = nil
+                    perform { try store.deletePermanently(item) }
+                }
+                Button("取消", role: .cancel) { itemToDeletePermanently = nil }
+            } message: {
+                Text("此操作无法撤销。")
+            }
+            .alert("操作失败", isPresented: Binding(
+                get: { errorMessage != nil },
+                set: { if !$0 { errorMessage = nil } }
+            )) {
+                Button("好", role: .cancel) { errorMessage = nil }
+            } message: {
+                Text(errorMessage ?? "未知错误")
+            }
         }
+    }
+
+    private func perform(_ action: () throws -> Void) {
+        do { try action() } catch { errorMessage = error.localizedDescription }
     }
 }
 
@@ -861,6 +968,17 @@ private struct ChangePasscodeView: View {
     @State private var hint = ""
     @State private var message: String?
 
+    private var trimmedHint: String {
+        hint.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var canChange: Bool {
+        !current.isEmpty
+            && new.count >= 6
+            && new == confirmation
+            && (trimmedHint.isEmpty || !trimmedHint.localizedCaseInsensitiveContains(new))
+    }
+
     var body: some View {
         Form {
             Section {
@@ -874,12 +992,24 @@ private struct ChangePasscodeView: View {
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                 TextField("新提示词（可选）", text: $hint)
+                if !new.isEmpty && new.count < 6 {
+                    validationLabel("新口令至少需要 6 个字符。")
+                } else if !confirmation.isEmpty && new != confirmation {
+                    validationLabel("两次输入的新口令不一致。")
+                } else if !new.isEmpty
+                            && !trimmedHint.isEmpty
+                            && trimmedHint.localizedCaseInsensitiveContains(new) {
+                    validationLabel("提示词不能包含完整口令。")
+                }
             }
             Button("修改口令") { change() }
-                .disabled(current.isEmpty || new.count < 6 || new != confirmation)
+                .disabled(!canChange)
         }
         .navigationTitle("修改口令")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            if hint.isEmpty { hint = authStore.hint }
+        }
         .alert("修改口令", isPresented: Binding(
             get: { message != nil },
             set: { if !$0 { message = nil } }
@@ -890,9 +1020,20 @@ private struct ChangePasscodeView: View {
         }
     }
 
+    private func validationLabel(_ text: String) -> some View {
+        Label(text, systemImage: "exclamationmark.circle.fill")
+            .font(.footnote)
+            .foregroundStyle(.red)
+    }
+
     private func change() {
         do {
-            try authStore.changePasscode(current: current, new: new, confirmation: confirmation, hint: hint)
+            try authStore.changePasscode(
+                current: current,
+                new: new,
+                confirmation: confirmation,
+                hint: trimmedHint
+            )
             current = ""
             new = ""
             confirmation = ""

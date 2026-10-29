@@ -5,9 +5,27 @@ struct VaultSetupView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var passcode = ""
     @State private var confirmation = ""
+    @State private var hint = ""
     @State private var errorMessage: String?
+    @FocusState private var focusedField: Field?
     var required = false
     let onCreated: () -> Void
+
+    private enum Field: Hashable {
+        case passcode
+        case confirmation
+        case hint
+    }
+
+    private var trimmedHint: String {
+        hint.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var canCreate: Bool {
+        passcode.count >= 6
+            && confirmation == passcode
+            && (trimmedHint.isEmpty || !trimmedHint.localizedCaseInsensitiveContains(passcode))
+    }
 
     var body: some View {
         NavigationStack {
@@ -16,15 +34,38 @@ struct VaultSetupView: View {
                     SecureField("设置口令", text: $passcode)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
+                        .submitLabel(.next)
+                        .focused($focusedField, equals: .passcode)
+                        .onSubmit { focusedField = .confirmation }
                         .accessibilityIdentifier("setup-passcode")
                     SecureField("再次输入", text: $confirmation)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
+                        .submitLabel(.next)
+                        .focused($focusedField, equals: .confirmation)
+                        .onSubmit { focusedField = .hint }
                         .accessibilityIdentifier("setup-confirmation")
+                    TextField("提示词（可选）", text: $hint)
+                        .submitLabel(.done)
+                        .focused($focusedField, equals: .hint)
+                        .onSubmit {
+                            focusedField = nil
+                            if canCreate { create() }
+                        }
+
+                    if !passcode.isEmpty && passcode.count < 6 {
+                        validationLabel("口令至少需要 6 个字符。")
+                    } else if !confirmation.isEmpty && confirmation != passcode {
+                        validationLabel("两次输入的口令不一致。")
+                    } else if !passcode.isEmpty
+                                && !trimmedHint.isEmpty
+                                && trimmedHint.localizedCaseInsensitiveContains(passcode) {
+                        validationLabel("提示词不能包含完整口令。")
+                    }
                 } header: {
                     Text("设置密码")
                 } footer: {
-                    Text("建议至少 8 位。密码无法由客服找回，请同时保管好后续创建的加密备份。")
+                    Text("至少 6 个字符，建议使用 8 位以上。密码无法找回，请同时保管好后续创建的加密备份。")
                 }
 
                 Section {
@@ -44,8 +85,12 @@ struct VaultSetupView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("创建") { create() }
-                        .disabled(passcode.isEmpty || confirmation.isEmpty)
+                        .disabled(!canCreate)
                         .accessibilityIdentifier("setup-create")
+                }
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("完成") { focusedField = nil }
                 }
             }
             .alert("无法创建", isPresented: Binding(
@@ -57,12 +102,20 @@ struct VaultSetupView: View {
                 Text(errorMessage ?? "未知错误")
             }
         }
-        .interactiveDismissDisabled(required || !passcode.isEmpty || !confirmation.isEmpty)
+        .interactiveDismissDisabled(required || !passcode.isEmpty || !confirmation.isEmpty || !hint.isEmpty)
+    }
+
+    private func validationLabel(_ message: String) -> some View {
+        Label(message, systemImage: "exclamationmark.circle.fill")
+            .font(.footnote)
+            .foregroundStyle(.red)
+            .accessibilityIdentifier("setup-validation")
     }
 
     private func create() {
         do {
-            try authStore.create(passcode: passcode, confirmation: confirmation, hint: "")
+            try authStore.create(passcode: passcode, confirmation: confirmation, hint: trimmedHint)
+            focusedField = nil
             dismiss()
             onCreated()
         } catch {
