@@ -3,6 +3,7 @@ import XCTest
 final class FocusVaultUITests: XCTestCase {
     func testFirstRunTimerAndVaultFlowFitsScreen() throws {
         let app = XCUIApplication()
+        let passcode = "12345678"
         app.launch()
 
         let setupTitle = app.navigationBars["设置私人空间"]
@@ -18,9 +19,9 @@ final class FocusVaultUITests: XCTestCase {
         XCTAssertTrue(password.exists)
         XCTAssertTrue(confirmation.exists)
         password.tap()
-        password.typeText("vault123")
+        password.typeText(passcode)
         confirmation.tap()
-        confirmation.typeText("vault123")
+        confirmation.typeText(passcode)
         app.buttons["setup-create"].tap()
         XCTAssertTrue(setupTitle.waitForNonExistence(timeout: 5))
 
@@ -45,7 +46,7 @@ final class FocusVaultUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["计时中"].waitForExistence(timeout: 3))
         app.buttons["结束"].tap()
 
-        replaceText(in: duration, with: "vault123")
+        replaceText(in: duration, with: passcode)
         app.buttons["timer-start"].tap()
         let vaultTitle = app.navigationBars["私人空间"]
         XCTAssertTrue(vaultTitle.waitForExistence(timeout: 5))
