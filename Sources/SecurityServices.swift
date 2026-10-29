@@ -102,15 +102,15 @@ enum CryptoBox {
         }
     }
 
-    static func passcodeDigest(passcode: String, salt: Data) -> Data {
-        var input = Data(passcode.utf8)
-        input.append(salt)
-        return Data(SHA256.hash(data: input))
-    }
-
     static func constantTimeEqual(_ lhs: Data, _ rhs: Data) -> Bool {
         guard lhs.count == rhs.count else { return false }
         return zip(lhs, rhs).reduce(UInt8(0)) { $0 | ($1.0 ^ $1.1) } == 0
+    }
+
+    static func legacyPasscodeDigest(passcode: String, salt: Data) -> Data {
+        var input = Data(passcode.utf8)
+        input.append(salt)
+        return Data(SHA256.hash(data: input))
     }
 
     static func backupKey(password: String, salt: Data, iterations: Int) throws -> Data {
@@ -135,10 +135,55 @@ enum CryptoBox {
     }
 }
 
+enum BackupCodec {
+    static func encode(
+        _ payload: VaultBackupPayload,
+        password: String,
+        iterations: Int = 210_000
+    ) throws -> Data {
+        let salt = try CryptoBox.randomData(count: 16)
+        let key = try CryptoBox.backupKey(password: password, salt: salt, iterations: iterations)
+        let envelope = VaultBackupEnvelope(
+            format: "FocusVaultBackup",
+            version: 1,
+            salt: salt,
+            iterations: iterations,
+            encryptedPayload: try CryptoBox.seal(try JSONEncoder().encode(payload), using: key)
+        )
+        return try JSONEncoder().encode(envelope)
+    }
+
+    static func decode(_ data: Data, password: String) throws -> VaultBackupPayload {
+        let envelope: VaultBackupEnvelope
+        do {
+            envelope = try JSONDecoder().decode(VaultBackupEnvelope.self, from: data)
+        } catch {
+            throw AppSecurityError.invalidBackup
+        }
+        guard envelope.format == "FocusVaultBackup" else { throw AppSecurityError.invalidBackup }
+        guard envelope.version == 1 else { throw AppSecurityError.unsupportedBackup }
+        let key = try CryptoBox.backupKey(
+            password: password,
+            salt: envelope.salt,
+            iterations: envelope.iterations
+        )
+        let payloadData: Data
+        do {
+            payloadData = try CryptoBox.open(envelope.encryptedPayload, using: key)
+        } catch {
+            throw AppSecurityError.wrongPassword
+        }
+        let payload = try JSONDecoder().decode(VaultBackupPayload.self, from: payloadData)
+        guard payload.version == 1 else { throw AppSecurityError.unsupportedBackup }
+        return payload
+    }
+}
+
 @MainActor
 final class VaultAuthStore: ObservableObject {
     private struct AuthRecord: Codable {
         let salt: Data
+        let iterations: Int?
         let digest: Data
     }
 
@@ -171,7 +216,12 @@ final class VaultAuthStore: ObservableObject {
         }
 
         let salt = try CryptoBox.randomData(count: 16)
-        let record = AuthRecord(salt: salt, digest: CryptoBox.passcodeDigest(passcode: passcode, salt: salt))
+        let iterations = 210_000
+        let record = AuthRecord(
+            salt: salt,
+            iterations: iterations,
+            digest: try CryptoBox.backupKey(password: passcode, salt: salt, iterations: iterations)
+        )
         try SecureStore.set(try JSONEncoder().encode(record), account: authAccount)
         try SecureStore.set(try CryptoBox.randomData(count: 32), account: keyAccount)
         UserDefaults.standard.set(hint, forKey: hintKey)
@@ -187,11 +237,15 @@ final class VaultAuthStore: ObservableObject {
                 let record = try? JSONDecoder().decode(AuthRecord.self, from: data)
             else { return false }
 
-            let matches = CryptoBox.constantTimeEqual(
-                CryptoBox.passcodeDigest(passcode: passcode, salt: record.salt),
-                record.digest
-            )
+            let candidate: Data
+            if let iterations = record.iterations {
+                candidate = try CryptoBox.backupKey(password: passcode, salt: record.salt, iterations: iterations)
+            } else {
+                candidate = CryptoBox.legacyPasscodeDigest(passcode: passcode, salt: record.salt)
+            }
+            let matches = CryptoBox.constantTimeEqual(candidate, record.digest)
             if matches {
+                if record.iterations == nil { try upgradeLegacyPasscode(passcode) }
                 isUnlocked = true
                 failedAttempts = 0
                 lastError = nil
@@ -217,7 +271,12 @@ final class VaultAuthStore: ObservableObject {
             throw ValidationError("新口令至少需要 6 个字符，并且两次输入必须一致。")
         }
         let salt = try CryptoBox.randomData(count: 16)
-        let record = AuthRecord(salt: salt, digest: CryptoBox.passcodeDigest(passcode: new, salt: salt))
+        let iterations = 210_000
+        let record = AuthRecord(
+            salt: salt,
+            iterations: iterations,
+            digest: try CryptoBox.backupKey(password: new, salt: salt, iterations: iterations)
+        )
         try SecureStore.set(try JSONEncoder().encode(record), account: authAccount)
         UserDefaults.standard.set(hint, forKey: hintKey)
     }
@@ -225,6 +284,17 @@ final class VaultAuthStore: ObservableObject {
     func lock() {
         isUnlocked = false
         lastError = nil
+    }
+
+    private func upgradeLegacyPasscode(_ passcode: String) throws {
+        let salt = try CryptoBox.randomData(count: 16)
+        let iterations = 210_000
+        let record = AuthRecord(
+            salt: salt,
+            iterations: iterations,
+            digest: try CryptoBox.backupKey(password: passcode, salt: salt, iterations: iterations)
+        )
+        try SecureStore.set(try JSONEncoder().encode(record), account: authAccount)
     }
 
     func vaultKey() throws -> Data {

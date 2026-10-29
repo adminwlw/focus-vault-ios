@@ -1,4 +1,5 @@
 import Foundation
+import ImageIO
 import PhotosUI
 import SwiftUI
 import UniformTypeIdentifiers
@@ -9,6 +10,7 @@ final class VaultStore: ObservableObject {
     private let fileManager: FileManager
     private let rootURL: URL
     private let mediaURL: URL
+    private let thumbnailURL: URL
     private let indexURL: URL
     private let exportURL: URL
     private var keyData: Data?
@@ -23,6 +25,7 @@ final class VaultStore: ObservableObject {
         let applicationSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         rootURL = applicationSupport.appendingPathComponent("PrivateVault", isDirectory: true)
         mediaURL = rootURL.appendingPathComponent("Media", isDirectory: true)
+        thumbnailURL = rootURL.appendingPathComponent("Thumbnails", isDirectory: true)
         indexURL = rootURL.appendingPathComponent("index.vault")
         exportURL = fileManager.temporaryDirectory.appendingPathComponent("FocusVaultExports", isDirectory: true)
     }
@@ -78,7 +81,13 @@ final class VaultStore: ObservableObject {
                     : .photo
                 let fileExtension = selection.supportedContentTypes.first?.preferredFilenameExtension
                     ?? (kind == .photo ? "jpg" : "mov")
-                try importData(data, kind: kind, originalName: "导入项目.\(fileExtension)")
+                let capturedAt = kind == .photo ? capturedDate(from: data) : nil
+                try importData(
+                    data,
+                    kind: kind,
+                    originalName: "导入项目.\(fileExtension)",
+                    capturedAt: capturedAt
+                )
             } catch {
                 failures += 1
             }
@@ -92,15 +101,24 @@ final class VaultStore: ObservableObject {
         guard let data = image.jpegData(compressionQuality: 0.94) else {
             throw ValidationError("无法读取刚拍摄的照片。")
         }
-        try importData(data, kind: .photo, originalName: "相机拍摄.jpg")
+        try importData(data, kind: .photo, originalName: "相机拍摄.jpg", capturedAt: Date())
     }
 
-    func importData(_ data: Data, kind: VaultMediaKind, originalName: String) throws {
+    func importData(
+        _ data: Data,
+        kind: VaultMediaKind,
+        originalName: String,
+        capturedAt: Date? = nil
+    ) throws {
         guard let keyData else { throw ValidationError("私人空间尚未解锁。") }
+        guard !data.isEmpty else { throw ValidationError("导入项目为空。") }
+        let decodedImage = kind == .photo ? UIImage(data: data) : nil
+        if kind == .photo, decodedImage == nil { throw ValidationError("照片格式无法读取。") }
         let item = VaultItem(
             id: UUID(),
             originalName: originalName,
             importedAt: Date(),
+            capturedAt: capturedAt,
             mediaKind: kind,
             byteCount: data.count,
             albumName: nil,
@@ -108,9 +126,24 @@ final class VaultStore: ObservableObject {
             deletedAt: nil
         )
         let encrypted = try CryptoBox.seal(data, using: keyData)
-        try protectedWrite(encrypted, to: mediaFileURL(for: item.id))
-        items.append(item)
-        try saveIndex()
+        let mediaFile = mediaFileURL(for: item.id)
+        do {
+            try protectedWrite(encrypted, to: mediaFile)
+            let stored = try CryptoBox.open(Data(contentsOf: mediaFile), using: keyData)
+            guard stored == data else { throw ValidationError("写入后的媒体校验失败。") }
+            if let decodedImage, let thumbnail = thumbnailData(from: decodedImage) {
+                try protectedWrite(
+                    try CryptoBox.seal(thumbnail, using: keyData),
+                    to: thumbnailFileURL(for: item.id)
+                )
+            }
+            items.append(item)
+            try saveIndex()
+        } catch {
+            try? fileManager.removeItem(at: mediaFile)
+            try? fileManager.removeItem(at: thumbnailFileURL(for: item.id))
+            throw error
+        }
     }
 
     func data(for item: VaultItem) throws -> Data {
@@ -119,12 +152,23 @@ final class VaultStore: ObservableObject {
         return try CryptoBox.open(encrypted, using: keyData)
     }
 
+    func thumbnailData(for item: VaultItem) throws -> Data {
+        guard let keyData else { throw ValidationError("私人空间尚未解锁。") }
+        let url = thumbnailFileURL(for: item.id)
+        guard fileManager.fileExists(atPath: url.path) else { return try data(for: item) }
+        return try CryptoBox.open(Data(contentsOf: url), using: keyData)
+    }
+
     func temporaryExport(for item: VaultItem) throws -> URL {
         try fileManager.createDirectory(at: exportURL, withIntermediateDirectories: true)
         let safeName = item.originalName.replacingOccurrences(of: "/", with: "-")
         let url = exportURL.appendingPathComponent("\(item.id.uuidString)-\(safeName)")
         try protectedWrite(try data(for: item), to: url)
         return url
+    }
+
+    func cleanupTemporaryExports() {
+        try? fileManager.removeItem(at: exportURL)
     }
 
     func toggleFavorite(_ item: VaultItem) throws {
@@ -136,8 +180,31 @@ final class VaultStore: ObservableObject {
         try update(item.id) { $0.albumName = cleaned?.isEmpty == true ? nil : cleaned }
     }
 
+    func assign(_ ids: Set<UUID>, toAlbum album: String?) throws {
+        let cleaned = album?.trimmingCharacters(in: .whitespacesAndNewlines)
+        for index in items.indices where ids.contains(items[index].id) {
+            items[index].albumName = cleaned?.isEmpty == true ? nil : cleaned
+        }
+        try saveIndex()
+    }
+
+    func setFavorite(_ ids: Set<UUID>, value: Bool) throws {
+        for index in items.indices where ids.contains(items[index].id) {
+            items[index].isFavorite = value
+        }
+        try saveIndex()
+    }
+
     func moveToTrash(_ item: VaultItem) throws {
         try update(item.id) { $0.deletedAt = Date() }
+    }
+
+    func moveToTrash(_ ids: Set<UUID>) throws {
+        let deletedAt = Date()
+        for index in items.indices where ids.contains(items[index].id) {
+            items[index].deletedAt = deletedAt
+        }
+        try saveIndex()
     }
 
     func restore(_ item: VaultItem) throws {
@@ -146,6 +213,7 @@ final class VaultStore: ObservableObject {
 
     func deletePermanently(_ item: VaultItem) throws {
         try fileManager.removeItem(at: mediaFileURL(for: item.id))
+        try? fileManager.removeItem(at: thumbnailFileURL(for: item.id))
         items.removeAll { $0.id == item.id }
         try saveIndex()
     }
@@ -153,6 +221,7 @@ final class VaultStore: ObservableObject {
     func emptyTrash() throws {
         for item in deletedItems {
             try? fileManager.removeItem(at: mediaFileURL(for: item.id))
+            try? fileManager.removeItem(at: thumbnailFileURL(for: item.id))
         }
         items.removeAll { $0.deletedAt != nil }
         try saveIndex()
@@ -168,22 +237,12 @@ final class VaultStore: ObservableObject {
                 (item.id.uuidString, try data(for: item))
             })
         )
-        let payloadData = try JSONEncoder().encode(payload)
-        let salt = try CryptoBox.randomData(count: 16)
-        let iterations = 210_000
-        let backupKey = try CryptoBox.backupKey(password: password, salt: salt, iterations: iterations)
-        let envelope = VaultBackupEnvelope(
-            format: "FocusVaultBackup",
-            version: 1,
-            salt: salt,
-            iterations: iterations,
-            encryptedPayload: try CryptoBox.seal(payloadData, using: backupKey)
-        )
         try fileManager.createDirectory(at: exportURL, withIntermediateDirectories: true)
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyyMMdd-HHmmss"
         let url = exportURL.appendingPathComponent("私人空间备份-\(formatter.string(from: Date())).focusvault")
-        try protectedWrite(try JSONEncoder().encode(envelope), to: url)
+        // shortcut: the v1 backup is assembled in memory; stream a future format before supporting very large video libraries.
+        try protectedWrite(try BackupCodec.encode(payload, password: password), to: url)
         return url
     }
 
@@ -192,32 +251,19 @@ final class VaultStore: ObservableObject {
         let accessed = url.startAccessingSecurityScopedResource()
         defer { if accessed { url.stopAccessingSecurityScopedResource() } }
 
-        let envelope: VaultBackupEnvelope
-        do {
-            envelope = try JSONDecoder().decode(VaultBackupEnvelope.self, from: Data(contentsOf: url))
-        } catch {
-            throw AppSecurityError.invalidBackup
-        }
-        guard envelope.format == "FocusVaultBackup" else { throw AppSecurityError.invalidBackup }
-        guard envelope.version == 1 else { throw AppSecurityError.unsupportedBackup }
-
-        let backupKey = try CryptoBox.backupKey(
-            password: password,
-            salt: envelope.salt,
-            iterations: envelope.iterations
-        )
-        let payloadData: Data
-        do {
-            payloadData = try CryptoBox.open(envelope.encryptedPayload, using: backupKey)
-        } catch {
-            throw AppSecurityError.wrongPassword
-        }
-        let payload = try JSONDecoder().decode(VaultBackupPayload.self, from: payloadData)
-        guard payload.version == 1 else { throw AppSecurityError.unsupportedBackup }
+        let payload = try BackupCodec.decode(Data(contentsOf: url), password: password)
 
         for item in payload.items {
             guard let original = payload.media[item.id.uuidString] else { throw AppSecurityError.invalidBackup }
             try protectedWrite(try CryptoBox.seal(original, using: keyData), to: mediaFileURL(for: item.id))
+            if item.mediaKind == .photo,
+               let image = UIImage(data: original),
+               let thumbnail = thumbnailData(from: image) {
+                try protectedWrite(
+                    try CryptoBox.seal(thumbnail, using: keyData),
+                    to: thumbnailFileURL(for: item.id)
+                )
+            }
         }
         let incomingIDs = Set(payload.items.map(\.id))
         items.removeAll { incomingIDs.contains($0.id) }
@@ -243,6 +289,7 @@ final class VaultStore: ObservableObject {
         guard !expired.isEmpty else { return }
         for item in expired {
             try? fileManager.removeItem(at: mediaFileURL(for: item.id))
+            try? fileManager.removeItem(at: thumbnailFileURL(for: item.id))
         }
         items.removeAll { item in expired.contains(where: { $0.id == item.id }) }
         try saveIndex()
@@ -250,8 +297,13 @@ final class VaultStore: ObservableObject {
 
     private func prepareDirectories() throws {
         try fileManager.createDirectory(at: mediaURL, withIntermediateDirectories: true)
+        try fileManager.createDirectory(at: thumbnailURL, withIntermediateDirectories: true)
         try fileManager.createDirectory(at: exportURL, withIntermediateDirectories: true)
         try fileManager.setAttributes([.protectionKey: FileProtectionType.complete], ofItemAtPath: rootURL.path)
+        var root = rootURL
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        try root.setResourceValues(values)
     }
 
     private func protectedWrite(_ data: Data, to url: URL) throws {
@@ -261,5 +313,32 @@ final class VaultStore: ObservableObject {
 
     private func mediaFileURL(for id: UUID) -> URL {
         mediaURL.appendingPathComponent("\(id.uuidString).vault")
+    }
+
+    private func thumbnailFileURL(for id: UUID) -> URL {
+        thumbnailURL.appendingPathComponent("\(id.uuidString).vault")
+    }
+
+    private func thumbnailData(from image: UIImage) -> Data? {
+        let maximum: CGFloat = 512
+        let ratio = min(maximum / image.size.width, maximum / image.size.height, 1)
+        let size = CGSize(width: image.size.width * ratio, height: image.size.height * ratio)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        return renderer.jpegData(withCompressionQuality: 0.82) { _ in
+            image.draw(in: CGRect(origin: .zero, size: size))
+        }
+    }
+
+    private func capturedDate(from data: Data) -> Date? {
+        guard
+            let source = CGImageSourceCreateWithData(data as CFData, nil),
+            let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+            let exif = properties[kCGImagePropertyExifDictionary] as? [CFString: Any],
+            let value = exif[kCGImagePropertyExifDateTimeOriginal] as? String
+        else { return nil }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy:MM:dd HH:mm:ss"
+        return formatter.date(from: value)
     }
 }

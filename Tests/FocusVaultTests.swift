@@ -21,20 +21,6 @@ final class FocusVaultTests: XCTestCase {
         XCTAssertThrowsError(try CryptoBox.open(encrypted, using: wrongKey))
     }
 
-    func testPasscodeDigestIsSaltedAndDeterministic() throws {
-        let salt = Data(repeating: 7, count: 16)
-        let otherSalt = Data(repeating: 8, count: 16)
-
-        XCTAssertEqual(
-            CryptoBox.passcodeDigest(passcode: "12345678", salt: salt),
-            CryptoBox.passcodeDigest(passcode: "12345678", salt: salt)
-        )
-        XCTAssertNotEqual(
-            CryptoBox.passcodeDigest(passcode: "12345678", salt: salt),
-            CryptoBox.passcodeDigest(passcode: "12345678", salt: otherSalt)
-        )
-    }
-
     func testBackupKeyDerivationIsDeterministic() throws {
         let salt = Data(repeating: 3, count: 16)
         let first = try CryptoBox.backupKey(password: "backup-password", salt: salt, iterations: 1_000)
@@ -52,6 +38,7 @@ final class FocusVaultTests: XCTestCase {
             plannedSeconds: 1_500,
             remainingWhenPaused: 900,
             endDate: Date(timeIntervalSince1970: 1_800_000_000),
+            startedAt: Date(timeIntervalSince1970: 1_799_999_100),
             phase: .paused,
             sessionID: UUID(uuidString: "00000000-0000-0000-0000-000000000001")
         )
@@ -60,6 +47,34 @@ final class FocusVaultTests: XCTestCase {
             from: JSONEncoder().encode(original)
         )
         XCTAssertEqual(restored, original)
+    }
+
+    func testBackupCodecRoundTripAndTamperRejection() throws {
+        let item = VaultItem(
+            id: UUID(),
+            originalName: "sample.jpg",
+            importedAt: Date(timeIntervalSince1970: 1_800_000_000),
+            capturedAt: nil,
+            mediaKind: .photo,
+            byteCount: 3,
+            albumName: "家人",
+            isFavorite: true,
+            deletedAt: nil
+        )
+        let payload = VaultBackupPayload(
+            version: 1,
+            createdAt: Date(timeIntervalSince1970: 1_800_000_000),
+            items: [item],
+            media: [item.id.uuidString: Data([1, 2, 3])]
+        )
+        let encoded = try BackupCodec.encode(payload, password: "backup-password", iterations: 1_000)
+        let decoded = try BackupCodec.decode(encoded, password: "backup-password")
+        XCTAssertEqual(decoded.items, payload.items)
+        XCTAssertEqual(decoded.media, payload.media)
+
+        var tampered = encoded
+        tampered[tampered.index(before: tampered.endIndex)] ^= 1
+        XCTAssertThrowsError(try BackupCodec.decode(tampered, password: "backup-password"))
     }
 }
 

@@ -7,16 +7,20 @@ final class FocusTimerStore: ObservableObject {
     private let sessionsKey = "focus-sessions-v1"
     private let remindersKey = "focus-reminders-v1"
     private var ticker: Timer?
-    private var sessionStartedAt: Date?
 
     @Published private(set) var state = FocusTimerState()
     @Published private(set) var sessions: [FocusSession] = []
     @Published private(set) var now = Date()
+    @Published private(set) var notificationsDenied = false
     @Published var remindersEnabled: Bool {
         didSet {
             UserDefaults.standard.set(remindersEnabled, forKey: remindersKey)
             if remindersEnabled {
-                Task { await requestNotificationPermission() }
+                Task {
+                    let granted = await requestNotificationPermission()
+                    notificationsDenied = !granted
+                    if !granted { remindersEnabled = false }
+                }
             } else {
                 UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["focus-timer"])
             }
@@ -28,6 +32,7 @@ final class FocusTimerStore: ObservableObject {
         load()
         refresh()
         updateTicker()
+        Task { await refreshNotificationStatus() }
     }
 
     var remainingSeconds: Int {
@@ -61,7 +66,7 @@ final class FocusTimerStore: ObservableObject {
     func start() {
         guard state.phase == .idle || state.phase == .finished else { return }
         let id = UUID()
-        sessionStartedAt = Date()
+        state.startedAt = Date()
         state.sessionID = id
         state.remainingWhenPaused = state.plannedSeconds
         state.endDate = Date().addingTimeInterval(TimeInterval(state.plannedSeconds))
@@ -103,7 +108,7 @@ final class FocusTimerStore: ObservableObject {
         state.endDate = nil
         state.sessionID = nil
         state.remainingWhenPaused = state.plannedSeconds
-        sessionStartedAt = nil
+        state.startedAt = nil
         save()
         updateTicker()
     }
@@ -116,7 +121,6 @@ final class FocusTimerStore: ObservableObject {
             state.endDate = nil
             state.remainingWhenPaused = 0
             state.sessionID = nil
-            sessionStartedAt = nil
             save()
             updateTicker()
         }
@@ -124,7 +128,7 @@ final class FocusTimerStore: ObservableObject {
 
     private func appendSession(outcome: FocusSession.Outcome, focusedSeconds: Int) {
         let endedAt = Date()
-        let startedAt = sessionStartedAt ?? endedAt.addingTimeInterval(-TimeInterval(focusedSeconds))
+        let startedAt = state.startedAt ?? endedAt.addingTimeInterval(-TimeInterval(focusedSeconds))
         let session = FocusSession(
             id: state.sessionID ?? UUID(),
             taskName: state.taskName,
@@ -166,8 +170,13 @@ final class FocusTimerStore: ObservableObject {
         defaults.set(try? JSONEncoder().encode(sessions), forKey: sessionsKey)
     }
 
-    private func requestNotificationPermission() async {
-        _ = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])
+    private func requestNotificationPermission() async -> Bool {
+        (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])) ?? false
+    }
+
+    private func refreshNotificationStatus() async {
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        notificationsDenied = settings.authorizationStatus == .denied
     }
 
     private func scheduleNotification() {

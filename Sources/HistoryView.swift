@@ -1,6 +1,12 @@
 import SwiftUI
 
 struct HistoryView: View {
+    private struct DailyGroup: Identifiable {
+        let day: Date
+        let sessions: [FocusSession]
+        var id: Date { day }
+    }
+
     @EnvironmentObject private var timerStore: FocusTimerStore
     @EnvironmentObject private var authStore: VaultAuthStore
     @State private var searchText = ""
@@ -9,6 +15,15 @@ struct HistoryView: View {
     private var filteredSessions: [FocusSession] {
         guard !searchText.isEmpty else { return timerStore.sessions }
         return timerStore.sessions.filter { $0.taskName.localizedCaseInsensitiveContains(searchText) }
+    }
+
+    private var dailyGroups: [DailyGroup] {
+        let grouped = Dictionary(grouping: filteredSessions) {
+            Calendar.current.startOfDay(for: $0.endedAt)
+        }
+        return grouped
+            .map { DailyGroup(day: $0.key, sessions: $0.value.sorted { $0.endedAt > $1.endedAt }) }
+            .sorted { $0.day > $1.day }
     }
 
     var body: some View {
@@ -26,9 +41,13 @@ struct HistoryView: View {
                         .listRowBackground(Color.clear)
                 } else {
                     summarySection
-                    Section("记录") {
-                        ForEach(filteredSessions) { session in
-                            sessionRow(session)
+                    ForEach(dailyGroups) { group in
+                        Section {
+                            ForEach(group.sessions) { session in
+                                sessionRow(session)
+                            }
+                        } header: {
+                            dailyHeader(day: group.day, sessions: group.sessions)
                         }
                     }
                 }
@@ -41,6 +60,16 @@ struct HistoryView: View {
                     onVaultUnlocked()
                 }
             }
+        }
+    }
+
+    private func dailyHeader(day: Date, sessions: [FocusSession]) -> some View {
+        let completed = sessions.filter { $0.outcome == .completed }.count
+        let minutes = sessions.reduce(0) { $0 + $1.focusedSeconds } / 60
+        return HStack {
+            Text(day, format: .dateTime.year().month().day())
+            Spacer()
+            Text("完成 \(completed) 次 · \(minutes) 分钟")
         }
     }
 

@@ -26,7 +26,9 @@ struct VaultSetupView: View {
 
                 Section {
                     Label("媒体会加密保存在 App 内", systemImage: "lock.shield")
+                    Label("导入是复制，系统照片原件不会自动删除", systemImage: "photo.on.rectangle")
                     Label("卸载前需要创建加密备份", systemImage: "externaldrive")
+                    Label("日常可在记录搜索框输入完整口令进入", systemImage: "magnifyingglass")
                 }
             }
             .navigationTitle("设置私人空间")

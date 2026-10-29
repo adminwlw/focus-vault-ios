@@ -13,6 +13,7 @@ struct FocusTimerState: Codable, Equatable {
     var plannedSeconds = 25 * 60
     var remainingWhenPaused = 25 * 60
     var endDate: Date?
+    var startedAt: Date?
     var phase: FocusPhase = .idle
     var sessionID: UUID?
 }
@@ -41,6 +42,7 @@ struct VaultItem: Codable, Identifiable, Hashable {
     var id: UUID
     var originalName: String
     var importedAt: Date
+    var capturedAt: Date?
     var mediaKind: VaultMediaKind
     var byteCount: Int
     var albumName: String?

@@ -3,6 +3,12 @@ import PhotosUI
 import SwiftUI
 import UIKit
 
+private enum VaultSortOrder: String, CaseIterable, Identifiable {
+    case importedNewest = "最近导入"
+    case capturedNewest = "最近拍摄"
+    var id: Self { self }
+}
+
 struct VaultView: View {
     @EnvironmentObject private var store: VaultStore
     @State private var pickerItems: [PhotosPickerItem] = []
@@ -11,15 +17,27 @@ struct VaultView: View {
     @State private var showCamera = false
     @State private var showTrash = false
     @State private var showManagement = false
-    @State private var albumTarget: VaultItem?
+    @State private var albumTargets: Set<UUID> = []
     @State private var newAlbumName = ""
+    @State private var sortOrder: VaultSortOrder = .importedNewest
+    @State private var isSelecting = false
+    @State private var selectedIDs: Set<UUID> = []
+    @State private var confirmBatchDelete = false
     let onLock: () -> Void
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 2), count: 3)
 
     private var visibleItems: [VaultItem] {
-        store.activeItems.filter { item in
+        let filtered = store.activeItems.filter { item in
             (!favoritesOnly || item.isFavorite) && (selectedAlbum == nil || item.albumName == selectedAlbum)
+        }
+        return filtered.sorted { lhs, rhs in
+            switch sortOrder {
+            case .importedNewest:
+                lhs.importedAt > rhs.importedAt
+            case .capturedNewest:
+                (lhs.capturedAt ?? lhs.importedAt) > (rhs.capturedAt ?? rhs.importedAt)
+            }
         }
     }
 
@@ -28,15 +46,14 @@ struct VaultView: View {
             .alert("新建相册", isPresented: newAlbumAlertBinding) {
                 TextField("相册名称", text: $newAlbumName)
                 Button("取消", role: .cancel) {
-                    albumTarget = nil
+                    albumTargets = []
                     newAlbumName = ""
                 }
                 Button("创建并移动") {
-                    if let item = albumTarget {
-                        tryAction { try store.assign(item, toAlbum: newAlbumName) }
-                    }
-                    albumTarget = nil
+                    tryAction { try store.assign(albumTargets, toAlbum: newAlbumName) }
+                    albumTargets = []
                     newAlbumName = ""
+                    finishSelection()
                 }
                 .disabled(newAlbumName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
@@ -44,6 +61,15 @@ struct VaultView: View {
                 Button("好", role: .cancel) { store.errorMessage = nil }
             } message: {
                 Text(store.errorMessage ?? "未知错误")
+            }
+            .confirmationDialog("移到最近删除？", isPresented: $confirmBatchDelete, titleVisibility: .visible) {
+                Button("移动 \(selectedIDs.count) 个项目", role: .destructive) {
+                    tryAction { try store.moveToTrash(selectedIDs) }
+                    finishSelection()
+                }
+                Button("取消", role: .cancel) {}
+            } message: {
+                Text("这些项目将在 30 天后自动永久删除。")
             }
     }
 
@@ -66,6 +92,9 @@ struct VaultView: View {
     private var navigationView: some View {
         NavigationStack {
             vaultContent
+            .safeAreaInset(edge: .bottom) {
+                if isSelecting { selectionBar }
+            }
             .navigationTitle(selectedAlbum ?? (favoritesOnly ? "收藏" : "私人空间"))
             .navigationBarTitleDisplayMode(.large)
             .navigationDestination(for: VaultItem.self) { item in
@@ -108,18 +137,32 @@ struct VaultView: View {
         } else {
             ScrollView {
                 LazyVGrid(columns: columns, spacing: 2) {
-                    ForEach(visibleItems) { item in
-                        NavigationLink(value: item) {
-                            VaultGridCell(item: item)
-                        }
-                        .buttonStyle(.plain)
-                        .contextMenu {
-                            itemContextMenu(item)
-                        }
-                    }
+                    ForEach(visibleItems) { item in gridItem(item) }
                 }
             }
             .background(Color(uiColor: .systemBackground))
+        }
+    }
+
+    @ViewBuilder
+    private func gridItem(_ item: VaultItem) -> some View {
+        if isSelecting {
+            Button {
+                if selectedIDs.contains(item.id) {
+                    selectedIDs.remove(item.id)
+                } else {
+                    selectedIDs.insert(item.id)
+                }
+            } label: {
+                VaultGridCell(item: item, isSelected: selectedIDs.contains(item.id))
+            }
+            .buttonStyle(.plain)
+        } else {
+            NavigationLink(value: item) {
+                VaultGridCell(item: item)
+            }
+            .buttonStyle(.plain)
+            .contextMenu { itemContextMenu(item) }
         }
     }
 
@@ -141,15 +184,24 @@ struct VaultView: View {
     @ToolbarContentBuilder
     private var vaultToolbar: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
-            Button(action: onLock) {
-                Label("锁定", systemImage: "lock")
+            if isSelecting {
+                Button("取消") { finishSelection() }
+            } else {
+                Button(action: onLock) {
+                    Label("锁定", systemImage: "lock")
+                }
             }
         }
         ToolbarItemGroup(placement: .topBarTrailing) {
-            PhotosPicker(selection: $pickerItems, maxSelectionCount: 50, matching: .any(of: [.images, .videos])) {
-                Image(systemName: "plus")
+            if isSelecting {
+                Text("已选 \(selectedIDs.count) 项")
+                    .font(.subheadline.monospacedDigit())
+            } else {
+                PhotosPicker(selection: $pickerItems, maxSelectionCount: 50, matching: .any(of: [.images, .videos])) {
+                    Image(systemName: "plus")
+                }
+                vaultMenu
             }
-            vaultMenu
         }
     }
 
@@ -186,7 +238,26 @@ struct VaultView: View {
                 }
             }
 
+            Menu("排序") {
+                ForEach(VaultSortOrder.allCases) { order in
+                    Button {
+                        sortOrder = order
+                    } label: {
+                        if sortOrder == order {
+                            Label(order.rawValue, systemImage: "checkmark")
+                        } else {
+                            Text(order.rawValue)
+                        }
+                    }
+                }
+            }
+
             Divider()
+            Button {
+                isSelecting = true
+            } label: {
+                Label("选择项目", systemImage: "checkmark.circle")
+            }
             Button {
                 showTrash = true
             } label: {
@@ -204,8 +275,8 @@ struct VaultView: View {
 
     private var newAlbumAlertBinding: Binding<Bool> {
         Binding(
-            get: { albumTarget != nil },
-            set: { if !$0 { albumTarget = nil; newAlbumName = "" } }
+            get: { !albumTargets.isEmpty },
+            set: { if !$0 { albumTargets = []; newAlbumName = "" } }
         )
     }
 
@@ -228,7 +299,7 @@ struct VaultView: View {
                 }
             }
             Button("新建相册…") {
-                albumTarget = item
+                albumTargets = [item.id]
             }
         } label: {
             Label("移动到相册", systemImage: "folder")
@@ -249,11 +320,59 @@ struct VaultView: View {
     private func tryAction(_ action: () throws -> Void) {
         do { try action() } catch { store.errorMessage = error.localizedDescription }
     }
+
+    private var selectionBar: some View {
+        HStack(spacing: 28) {
+            Button {
+                tryAction { try store.setFavorite(selectedIDs, value: true) }
+                finishSelection()
+            } label: {
+                Label("收藏", systemImage: "heart")
+            }
+            .disabled(selectedIDs.isEmpty)
+
+            Menu {
+                Button("不属于任何相册") {
+                    tryAction { try store.assign(selectedIDs, toAlbum: nil) }
+                    finishSelection()
+                }
+                ForEach(store.albums, id: \.self) { album in
+                    Button(album) {
+                        tryAction { try store.assign(selectedIDs, toAlbum: album) }
+                        finishSelection()
+                    }
+                }
+                Button("新建相册…") {
+                    albumTargets = selectedIDs
+                }
+            } label: {
+                Label("相册", systemImage: "folder")
+            }
+            .disabled(selectedIDs.isEmpty)
+
+            Button(role: .destructive) {
+                confirmBatchDelete = true
+            } label: {
+                Label("删除", systemImage: "trash")
+            }
+            .disabled(selectedIDs.isEmpty)
+        }
+        .labelStyle(.titleAndIcon)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
+        .background(.regularMaterial)
+    }
+
+    private func finishSelection() {
+        selectedIDs = []
+        isSelecting = false
+    }
 }
 
 private struct VaultGridCell: View {
     @EnvironmentObject private var store: VaultStore
     let item: VaultItem
+    var isSelected = false
     @State private var image: UIImage?
 
     var body: some View {
@@ -286,10 +405,21 @@ private struct VaultGridCell: View {
             .foregroundStyle(.white)
             .padding(6)
             .shadow(radius: 2)
+
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.title2)
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(.white, Color.accentColor)
+                    .padding(7)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+            }
         }
         .task(id: item.id) {
             guard item.mediaKind == .photo else { return }
-            image = try? UIImage(data: store.data(for: item))
+            if let data = try? store.thumbnailData(for: item) {
+                image = UIImage(data: data)
+            }
         }
         .accessibilityLabel(item.mediaKind == .photo ? "照片" : "视频")
         .accessibilityValue(item.importedAt.formatted(date: .abbreviated, time: .shortened))
@@ -304,6 +434,7 @@ private struct VaultDetailView: View {
     @State private var player: AVPlayer?
     @State private var exportURL: URL?
     @State private var showShare = false
+    @State private var confirmExport = false
     @State private var confirmDelete = false
     @State private var loadError: String?
 
@@ -334,7 +465,7 @@ private struct VaultDetailView: View {
                 .toolbar {
                     ToolbarItemGroup(placement: .topBarTrailing) {
                         Button {
-                            prepareShare(item)
+                            confirmExport = true
                         } label: {
                             Image(systemName: "square.and.arrow.up")
                         }
@@ -361,8 +492,19 @@ private struct VaultDetailView: View {
         }
         .sheet(isPresented: $showShare) {
             if let exportURL {
-                ShareSheet(items: [exportURL])
+                ShareSheet(items: [exportURL]) {
+                    if item?.mediaKind == .photo { store.cleanupTemporaryExports() }
+                }
             }
+        }
+        .confirmationDialog("导出会产生新的可见副本", isPresented: $confirmExport, titleVisibility: .visible) {
+            Button("继续导出") {
+                guard let item else { return }
+                prepareShare(item)
+            }
+            Button("取消", role: .cancel) {}
+        } message: {
+            Text("保存到系统“照片”会重新公开显示；通过文件或其他 App 分享也会在目标位置留下副本。")
         }
         .confirmationDialog("移到最近删除？", isPresented: $confirmDelete, titleVisibility: .visible) {
             Button("移到最近删除", role: .destructive) {
@@ -383,6 +525,10 @@ private struct VaultDetailView: View {
             Button("好", role: .cancel) { loadError = nil }
         } message: {
             Text(loadError ?? "未知错误")
+        }
+        .onDisappear {
+            player?.pause()
+            store.cleanupTemporaryExports()
         }
     }
 
@@ -576,7 +722,9 @@ private struct CreateBackupView: View {
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showShare) {
             if let backupURL {
-                ShareSheet(items: [backupURL])
+                ShareSheet(items: [backupURL]) {
+                    store.cleanupTemporaryExports()
+                }
             }
         }
         .alert("无法创建备份", isPresented: Binding(
@@ -752,9 +900,14 @@ private struct CameraPicker: UIViewControllerRepresentable {
 
 struct ShareSheet: UIViewControllerRepresentable {
     let items: [Any]
+    var onComplete: () -> Void = {}
 
     func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: items, applicationActivities: nil)
+        let controller = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        controller.completionWithItemsHandler = { _, _, _, _ in
+            DispatchQueue.main.async { onComplete() }
+        }
+        return controller
     }
 
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
