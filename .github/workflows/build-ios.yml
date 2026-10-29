@@ -3,10 +3,10 @@ name: Build iOS IPA
 on:
   workflow_dispatch:
   push:
-    branches: [focus-vault-ios]
+    branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
@@ -113,27 +113,6 @@ jobs:
             build/ui-screens
           if-no-files-found: error
           retention-days: 30
-
-      - name: Publish IPA or diagnostics to build branch
-        if: always()
-        run: |
-          mkdir -p release
-          rm -rf release/ci
-          mkdir -p release/ci
-          test ! -f build/tests.log || cp build/tests.log release/ci/
-          test ! -f build/device-build.log || cp build/device-build.log release/ci/
-          test ! -f build/ui-tests-se.log || cp build/ui-tests-se.log release/ci/
-          test ! -f build/ui-tests-promax.log || cp build/ui-tests-promax.log release/ci/
-          rm -rf release/ui-screens
-          test ! -d build/ui-screens || cp -R build/ui-screens release/ui-screens
-          test ! -f build/FocusVault-0.1.0-unsigned.ipa || cp build/FocusVault-0.1.0-unsigned.ipa release/
-          test ! -f build/FocusVault-0.1.0-unsigned.ipa.sha256 || cp build/FocusVault-0.1.0-unsigned.ipa.sha256 release/
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add -f release
-          git diff --cached --quiet && exit 0
-          git commit -m "build: publish unsigned IPA [skip ci]"
-          git push origin HEAD:${GITHUB_REF_NAME}
 
       - name: Fail workflow when verification failed
         if: steps.tests.outcome != 'success' || steps.device_build.outcome != 'success' || steps.ui_tests_small.outcome != 'success' || steps.ui_tests_large.outcome != 'success'
