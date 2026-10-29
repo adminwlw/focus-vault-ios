@@ -230,7 +230,7 @@ final class VaultAuthStore: ObservableObject {
     }
 
     func verify(_ passcode: String, quietly: Bool = false) -> Bool {
-        guard Date() >= nextAllowedAttempt else { return false }
+        guard quietly || Date() >= nextAllowedAttempt else { return false }
         do {
             guard
                 let data = try SecureStore.get(account: authAccount),
@@ -252,10 +252,12 @@ final class VaultAuthStore: ObservableObject {
                 return true
             }
 
-            failedAttempts += 1
-            if failedAttempts >= 5 {
-                let delay = min(pow(2.0, Double(failedAttempts - 5)), 30)
-                nextAllowedAttempt = Date().addingTimeInterval(delay)
+            if !quietly {
+                failedAttempts += 1
+                if failedAttempts >= 5 {
+                    let delay = min(pow(2.0, Double(failedAttempts - 5)), 30)
+                    nextAllowedAttempt = Date().addingTimeInterval(delay)
+                }
             }
             if !quietly { lastError = "口令不正确。" }
             return false

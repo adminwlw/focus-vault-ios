@@ -8,9 +8,7 @@ struct HistoryView: View {
     }
 
     @EnvironmentObject private var timerStore: FocusTimerStore
-    @EnvironmentObject private var authStore: VaultAuthStore
     @State private var searchText = ""
-    let onVaultUnlocked: () -> Void
 
     private var filteredSessions: [FocusSession] {
         guard !searchText.isEmpty else { return timerStore.sessions }
@@ -30,14 +28,18 @@ struct HistoryView: View {
         NavigationStack {
             List {
                 if timerStore.sessions.isEmpty {
-                    ContentUnavailableView(
-                        "还没有专注记录",
+                    EmptyStateView(
+                        "还没有计时记录",
                         systemImage: "clock.badge.checkmark",
-                        description: Text("完成一次专注后，记录会出现在这里。")
+                        description: "完成一次计时后，记录会出现在这里。"
                     )
                     .listRowBackground(Color.clear)
                 } else if filteredSessions.isEmpty {
-                    ContentUnavailableView.search(text: searchText)
+                    EmptyStateView(
+                        "没有找到记录",
+                        systemImage: "magnifyingglass",
+                        description: "没有与“\(searchText)”匹配的计时记录。"
+                    )
                         .listRowBackground(Color.clear)
                 } else {
                     summarySection
@@ -54,12 +56,6 @@ struct HistoryView: View {
             }
             .navigationTitle("记录")
             .searchable(text: $searchText, prompt: "搜索任务")
-            .onSubmit(of: .search) {
-                if authStore.hasVault, authStore.verify(searchText, quietly: true) {
-                    searchText = ""
-                    onVaultUnlocked()
-                }
-            }
         }
     }
 
@@ -79,7 +75,7 @@ struct HistoryView: View {
                 summaryValue(title: "完成次数", value: "\(timerStore.sessions.filter { $0.outcome == .completed }.count)")
                 Divider()
                 summaryValue(
-                    title: "专注时长",
+                    title: "计时时长",
                     value: "\(timerStore.sessions.reduce(0) { $0 + $1.focusedSeconds } / 60) 分钟"
                 )
             }

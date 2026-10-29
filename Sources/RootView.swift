@@ -8,30 +8,25 @@ struct RootView: View {
 
     @State private var showVault = false
     @State private var showSetup = false
-    @State private var showUnlock = false
     @State private var vaultError: String?
 
     var body: some View {
         TabView {
-            FocusView()
-                .tabItem { Label("专注", systemImage: "timer") }
-
-            HistoryView {
+            FocusView {
                 openUnlockedVault()
             }
+            .tabItem { Label("计时", systemImage: "timer") }
+
+            HistoryView()
             .tabItem { Label("记录", systemImage: "clock.arrow.circlepath") }
 
-            SettingsView(openVault: openVault)
+            SettingsView()
                 .tabItem { Label("设置", systemImage: "gearshape") }
         }
         .sheet(isPresented: $showSetup) {
-            VaultSetupView {
-                openUnlockedVault()
-            }
-        }
-        .sheet(isPresented: $showUnlock) {
-            VaultUnlockView {
-                openUnlockedVault()
+            VaultSetupView(required: true) {
+                authStore.lock()
+                vaultStore.lock()
             }
         }
         .fullScreenCover(isPresented: $showVault, onDismiss: lockVault) {
@@ -58,7 +53,10 @@ struct RootView: View {
                 .zIndex(100)
             }
         }
-        .onChange(of: scenePhase) { _, newPhase in
+        .onAppear {
+            if !authStore.hasVault { showSetup = true }
+        }
+        .onChange(of: scenePhase) { newPhase in
             if newPhase == .active {
                 timerStore.refresh()
             } else {
@@ -67,24 +65,11 @@ struct RootView: View {
         }
     }
 
-    private func openVault() {
-        if authStore.hasVault {
-            if authStore.isUnlocked {
-                openUnlockedVault()
-            } else {
-                showUnlock = true
-            }
-        } else {
-            showSetup = true
-        }
-    }
-
     private func openUnlockedVault() {
         guard authStore.isUnlocked else { return }
         do {
             try vaultStore.unlock(using: authStore.vaultKey())
             showSetup = false
-            showUnlock = false
             showVault = true
         } catch {
             vaultError = error.localizedDescription

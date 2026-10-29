@@ -5,7 +5,7 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>zh_CN</string>
     <key>CFBundleDisplayName</key>
-    <string>专注计时</string>
+    <string>计时器</string>
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key>
@@ -27,7 +27,7 @@
     <key>NSCameraUsageDescription</key>
     <string>用于将新拍摄的照片直接保存到私人空间。</string>
     <key>NSPhotoLibraryUsageDescription</key>
-    <string>用于选择要导入私人空间的照片和视频。</string>
+    <string>用于选择要导入的照片和视频，并在你确认后请求删除系统原件。</string>
     <key>UIApplicationSupportsIndirectInputEvents</key>
     <true/>
     <key>UILaunchScreen</key>
@@ -38,6 +38,8 @@
     <key>UISupportedInterfaceOrientations</key>
     <array>
         <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
     </array>
     <key>UTExportedTypeDeclarations</key>
     <array>

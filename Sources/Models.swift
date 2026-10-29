@@ -9,7 +9,7 @@ enum FocusPhase: String, Codable {
 }
 
 struct FocusTimerState: Codable, Equatable {
-    var taskName = "专注任务"
+    var taskName = "计时"
     var plannedSeconds = 25 * 60
     var remainingWhenPaused = 25 * 60
     var endDate: Date?

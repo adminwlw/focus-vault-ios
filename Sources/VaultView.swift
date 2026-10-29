@@ -23,6 +23,8 @@ struct VaultView: View {
     @State private var isSelecting = false
     @State private var selectedIDs: Set<UUID> = []
     @State private var confirmBatchDelete = false
+    @State private var importedSystemAssetIDs: [String] = []
+    @State private var confirmDeleteSystemOriginals = false
     let onLock: () -> Void
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 2), count: 3)
@@ -71,6 +73,28 @@ struct VaultView: View {
             } message: {
                 Text("这些项目将在 30 天后自动永久删除。")
             }
+            .confirmationDialog(
+                "已安全导入 \(importedSystemAssetIDs.count) 个项目",
+                isPresented: $confirmDeleteSystemOriginals,
+                titleVisibility: .visible
+            ) {
+                Button("删除系统照片中的原件", role: .destructive) {
+                    let identifiers = importedSystemAssetIDs
+                    importedSystemAssetIDs = []
+                    Task {
+                        do {
+                            try await store.deleteSystemAssets(localIdentifiers: identifiers)
+                        } catch {
+                            store.errorMessage = error.localizedDescription
+                        }
+                    }
+                }
+                Button("保留系统原件", role: .cancel) {
+                    importedSystemAssetIDs = []
+                }
+            } message: {
+                Text("删除会影响启用 iCloud 照片的其他设备；项目仍可能保留在系统“最近删除”中。iOS 会处理权限和删除确认。")
+            }
     }
 
     private var presentedNavigation: some View {
@@ -111,11 +135,15 @@ struct VaultView: View {
                     }
                 }
             }
-            .onChange(of: pickerItems) { _, newItems in
+            .onChange(of: pickerItems) { newItems in
                 guard !newItems.isEmpty else { return }
                 Task {
-                    await store.importSelections(newItems)
+                    let identifiers = await store.importSelections(newItems)
                     pickerItems = []
+                    if !identifiers.isEmpty {
+                        importedSystemAssetIDs = identifiers
+                        confirmDeleteSystemOriginals = true
+                    }
                 }
             }
         }
@@ -124,11 +152,12 @@ struct VaultView: View {
     @ViewBuilder
     private var vaultContent: some View {
         if visibleItems.isEmpty {
-            ContentUnavailableView {
-                Label(emptyTitle, systemImage: favoritesOnly ? "heart" : "photo.on.rectangle.angled")
-            } description: {
-                Text(emptyDescription)
-            } actions: {
+            VStack(spacing: 0) {
+                EmptyStateView(
+                    emptyTitle,
+                    systemImage: favoritesOnly ? "heart" : "photo.on.rectangle.angled",
+                    description: emptyDescription
+                )
                 PhotosPicker(selection: $pickerItems, maxSelectionCount: 50, matching: .any(of: [.images, .videos])) {
                     Label("导入照片或视频", systemImage: "photo.badge.plus")
                 }
@@ -183,7 +212,7 @@ struct VaultView: View {
 
     @ToolbarContentBuilder
     private var vaultToolbar: some ToolbarContent {
-        ToolbarItem(placement: .topBarLeading) {
+        ToolbarItem(placement: .navigationBarLeading) {
             if isSelecting {
                 Button("取消") { finishSelection() }
             } else {
@@ -192,7 +221,7 @@ struct VaultView: View {
                 }
             }
         }
-        ToolbarItemGroup(placement: .topBarTrailing) {
+        ToolbarItemGroup(placement: .navigationBarTrailing) {
             if isSelecting {
                 Text("已选 \(selectedIDs.count) 项")
                     .font(.subheadline.monospacedDigit())
@@ -463,7 +492,7 @@ private struct VaultDetailView: View {
                 .toolbarColorScheme(.dark, for: .navigationBar)
                 .toolbarBackground(.black, for: .navigationBar)
                 .toolbar {
-                    ToolbarItemGroup(placement: .topBarTrailing) {
+                    ToolbarItemGroup(placement: .navigationBarTrailing) {
                         Button {
                             confirmExport = true
                         } label: {
@@ -487,7 +516,7 @@ private struct VaultDetailView: View {
                 }
                 .task(id: item.id) { load(item) }
             } else {
-                ContentUnavailableView("项目不存在", systemImage: "exclamationmark.triangle")
+                EmptyStateView("项目不存在", systemImage: "exclamationmark.triangle")
             }
         }
         .sheet(isPresented: $showShare) {
@@ -574,9 +603,9 @@ private struct ZoomableImage: View {
             .scaledToFit()
             .scaleEffect(scale)
             .gesture(
-                MagnifyGesture()
+                MagnificationGesture()
                     .onChanged { value in
-                        scale = min(max(lastScale * value.magnification, 1), 5)
+                        scale = min(max(lastScale * value, 1), 5)
                     }
                     .onEnded { _ in
                         lastScale = scale
@@ -600,7 +629,7 @@ private struct RecentlyDeletedView: View {
         NavigationStack {
             List {
                 if store.deletedItems.isEmpty {
-                    ContentUnavailableView("最近删除为空", systemImage: "trash")
+                    EmptyStateView("最近删除为空", systemImage: "trash")
                         .listRowBackground(Color.clear)
                 } else {
                     ForEach(store.deletedItems) { item in
@@ -634,7 +663,7 @@ private struct RecentlyDeletedView: View {
                     Button("完成") { dismiss() }
                 }
                 if !store.deletedItems.isEmpty {
-                    ToolbarItem(placement: .topBarTrailing) {
+                    ToolbarItem(placement: .navigationBarTrailing) {
                         Button("全部删除", role: .destructive) { confirmEmpty = true }
                     }
                 }

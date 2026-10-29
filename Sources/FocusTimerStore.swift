@@ -55,7 +55,7 @@ final class FocusTimerStore: ObservableObject {
     func configure(taskName: String, seconds: Int) {
         guard state.phase == .idle || state.phase == .finished else { return }
         state.taskName = taskName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            ? "专注任务"
+            ? "计时"
             : taskName.trimmingCharacters(in: .whitespacesAndNewlines)
         state.plannedSeconds = seconds
         state.remainingWhenPaused = seconds
@@ -182,7 +182,7 @@ final class FocusTimerStore: ObservableObject {
     private func scheduleNotification() {
         guard remindersEnabled, let endDate = state.endDate else { return }
         let content = UNMutableNotificationContent()
-        content.title = "专注完成"
+        content.title = "计时完成"
         content.body = "\(state.taskName) 已结束。"
         content.sound = .default
         let trigger = UNTimeIntervalNotificationTrigger(

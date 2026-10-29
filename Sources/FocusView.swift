@@ -2,9 +2,11 @@ import SwiftUI
 
 struct FocusView: View {
     @EnvironmentObject private var store: FocusTimerStore
-    @State private var taskName = "专注任务"
-    @State private var selectedMinutes = 25
-    @State private var showDurationPicker = false
+    @EnvironmentObject private var authStore: VaultAuthStore
+    @State private var taskName = "计时"
+    @State private var durationInput = "25"
+    @State private var lastValidMinutes = 25
+    let onVaultUnlocked: () -> Void
 
     private var isEditable: Bool {
         store.state.phase == .idle || store.state.phase == .finished
@@ -13,103 +15,107 @@ struct FocusView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 28) {
+                VStack(spacing: 24) {
                     timerDial
-                    taskEditor
+                    manualTimerEditor
                     primaryControls
-                    presetControls
+                    quickDurations
                 }
-                .padding(.horizontal, 24)
-                .padding(.top, 20)
-                .padding(.bottom, 40)
+                .frame(maxWidth: 560)
+                .padding(.horizontal, 20)
+                .padding(.top, 12)
+                .padding(.bottom, 36)
+                .frame(maxWidth: .infinity)
             }
             .background(Color(uiColor: .systemGroupedBackground))
-            .navigationTitle("专注")
-            .sheet(isPresented: $showDurationPicker) {
-                NavigationStack {
-                    Form {
-                        Picker("专注时长", selection: $selectedMinutes) {
-                            ForEach([5, 10, 15, 20, 25, 30, 45, 60, 90, 120], id: \.self) { minutes in
-                                Text("\(minutes) 分钟").tag(minutes)
-                            }
-                        }
-                        .pickerStyle(.wheel)
-                    }
-                    .navigationTitle("选择时长")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("完成") {
-                                applyConfiguration()
-                                showDurationPicker = false
-                            }
-                        }
-                    }
-                }
-                .presentationDetents([.medium])
-            }
+            .navigationTitle("计时器")
             .onAppear {
-                taskName = store.state.taskName
-                selectedMinutes = max(1, store.state.plannedSeconds / 60)
+                taskName = store.state.taskName == "专注任务" ? "计时" : store.state.taskName
+                lastValidMinutes = max(1, store.state.plannedSeconds / 60)
+                durationInput = String(lastValidMinutes)
             }
         }
     }
 
     private var timerDial: some View {
-        ZStack {
-            Circle()
-                .stroke(Color.secondary.opacity(0.14), lineWidth: 10)
-            Circle()
-                .trim(from: 0, to: max(0.002, store.progress))
-                .stroke(
-                    Color.accentColor,
-                    style: StrokeStyle(lineWidth: 10, lineCap: .round)
-                )
-                .rotationEffect(.degrees(-90))
-                .animation(.easeInOut(duration: 0.35), value: store.progress)
+        GeometryReader { proxy in
+            let size = min(proxy.size.width, 270)
+            ZStack {
+                Circle()
+                    .stroke(Color.secondary.opacity(0.14), lineWidth: 10)
+                Circle()
+                    .trim(from: 0, to: max(0.002, store.progress))
+                    .stroke(
+                        Color.accentColor,
+                        style: StrokeStyle(lineWidth: 10, lineCap: .round)
+                    )
+                    .rotationEffect(.degrees(-90))
+                    .animation(.easeInOut(duration: 0.35), value: store.progress)
 
-            VStack(spacing: 8) {
-                Text(formattedTime(store.remainingSeconds))
-                    .font(.system(size: 58, weight: .thin, design: .rounded))
-                    .monospacedDigit()
-                    .contentTransition(.numericText())
-                Text(phaseLabel)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.secondary)
+                VStack(spacing: 8) {
+                    Text(formattedTime(store.remainingSeconds))
+                        .font(.system(size: 56, weight: .thin, design: .rounded))
+                        .monospacedDigit()
+                        .minimumScaleFactor(0.62)
+                        .lineLimit(1)
+                    Text(phaseLabel)
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
+                .padding(22)
             }
+            .frame(width: size, height: size)
+            .frame(maxWidth: .infinity)
         }
-        .frame(width: 270, height: 270)
+        .frame(height: 270)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("剩余时间 \(formattedTime(store.remainingSeconds))，\(phaseLabel)")
     }
 
-    private var taskEditor: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("当前任务")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .textCase(.uppercase)
-            TextField("专注任务", text: $taskName)
-                .textFieldStyle(.plain)
-                .font(.title3.weight(.semibold))
-                .disabled(!isEditable)
-                .submitLabel(.done)
-                .onSubmit { applyConfiguration() }
+    private var manualTimerEditor: some View {
+        VStack(spacing: 14) {
+            HStack {
+                Text("计时时长")
+                    .font(.body.weight(.medium))
+                Spacer()
+                TextField("分钟", text: $durationInput)
+                    .multilineTextAlignment(.trailing)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .submitLabel(.go)
+                    .frame(minWidth: 92, maxWidth: 180)
+                    .disabled(!isEditable)
+                    .onSubmit { startOrUnlock() }
+                Text("分钟")
+                    .foregroundStyle(.secondary)
+            }
+
+            Divider()
+
+            HStack {
+                Text("名称")
+                    .font(.body.weight(.medium))
+                Spacer()
+                TextField("计时", text: $taskName)
+                    .multilineTextAlignment(.trailing)
+                    .submitLabel(.done)
+                    .frame(minWidth: 120, maxWidth: 260)
+                    .disabled(!isEditable)
+            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(18)
         .background(.background, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .accessibilityElement(children: .contain)
     }
 
     @ViewBuilder
     private var primaryControls: some View {
         switch store.state.phase {
         case .idle, .finished:
-            Button {
-                applyConfiguration()
-                store.start()
-            } label: {
-                Label(store.state.phase == .finished ? "再次开始" : "开始专注", systemImage: "play.fill")
+            Button(action: startOrUnlock) {
+                Label(store.state.phase == .finished ? "再次计时" : "开始计时", systemImage: "play.fill")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
@@ -129,8 +135,7 @@ struct FocusView: View {
                 Button(role: .destructive) {
                     store.endEarly()
                 } label: {
-                    Text("结束")
-                        .frame(maxWidth: .infinity)
+                    Text("结束").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.large)
@@ -150,8 +155,7 @@ struct FocusView: View {
                 Button(role: .destructive) {
                     store.endEarly()
                 } label: {
-                    Text("结束")
-                        .frame(maxWidth: .infinity)
+                    Text("结束").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.large)
@@ -159,57 +163,54 @@ struct FocusView: View {
         }
     }
 
-    private var presetControls: some View {
+    private var quickDurations: some View {
         HStack(spacing: 10) {
-            presetButton(title: "专注", minutes: 25)
-            presetButton(title: "短休息", minutes: 5)
-            Button {
-                showDurationPicker = true
-            } label: {
-                VStack(spacing: 4) {
-                    Image(systemName: "slider.horizontal.3")
-                    Text("自定义")
-                        .font(.caption)
+            ForEach([5, 10, 30], id: \.self) { minutes in
+                Button {
+                    lastValidMinutes = minutes
+                    durationInput = String(minutes)
+                } label: {
+                    Text("\(minutes) 分钟")
+                        .frame(maxWidth: .infinity, minHeight: 38)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
                 }
-                .frame(maxWidth: .infinity, minHeight: 54)
+                .buttonStyle(.bordered)
+                .disabled(!isEditable)
             }
-            .buttonStyle(.bordered)
-            .disabled(!isEditable)
         }
-    }
-
-    private func presetButton(title: String, minutes: Int) -> some View {
-        Button {
-            selectedMinutes = minutes
-            applyConfiguration()
-        } label: {
-            VStack(spacing: 4) {
-                Text("\(minutes)")
-                    .font(.headline.monospacedDigit())
-                Text(title)
-                    .font(.caption)
-            }
-            .frame(maxWidth: .infinity, minHeight: 54)
-        }
-        .buttonStyle(.bordered)
-        .disabled(!isEditable)
     }
 
     private var phaseLabel: String {
         switch store.state.phase {
-        case .idle: "准备开始"
-        case .running: "正在专注"
-        case .paused: "已暂停"
-        case .finished: "本次已完成"
+        case .idle: return "准备开始"
+        case .running: return "计时中"
+        case .paused: return "已暂停"
+        case .finished: return "本次已完成"
         }
     }
 
     private func formattedTime(_ seconds: Int) -> String {
-        String(format: "%02d:%02d", seconds / 60, seconds % 60)
+        let hours = seconds / 3_600
+        let minutes = (seconds % 3_600) / 60
+        let remainder = seconds % 60
+        if hours > 0 { return String(format: "%02d:%02d:%02d", hours, minutes, remainder) }
+        return String(format: "%02d:%02d", minutes, remainder)
     }
 
-    private func applyConfiguration() {
-        store.configure(taskName: taskName, seconds: selectedMinutes * 60)
+    private func startOrUnlock() {
+        let input = durationInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        if authStore.hasVault, authStore.verify(input, quietly: true) {
+            durationInput = String(lastValidMinutes)
+            onVaultUnlocked()
+            return
+        }
+
+        if let minutes = Int(input), (1...1_440).contains(minutes) {
+            lastValidMinutes = minutes
+        }
+        durationInput = String(lastValidMinutes)
+        store.configure(taskName: taskName, seconds: lastValidMinutes * 60)
+        store.start()
     }
 }
-

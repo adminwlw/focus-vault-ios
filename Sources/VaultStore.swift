@@ -1,5 +1,6 @@
 import Foundation
 import ImageIO
+import Photos
 import PhotosUI
 import SwiftUI
 import UniformTypeIdentifiers
@@ -64,11 +65,12 @@ final class VaultStore: ObservableObject {
         try? fileManager.removeItem(at: exportURL)
     }
 
-    func importSelections(_ selections: [PhotosPickerItem]) async {
-        guard !selections.isEmpty else { return }
+    func importSelections(_ selections: [PhotosPickerItem]) async -> [String] {
+        guard !selections.isEmpty else { return [] }
         isBusy = true
         defer { isBusy = false }
         var failures = 0
+        var importedAssetIdentifiers: [String] = []
 
         for selection in selections {
             do {
@@ -88,12 +90,39 @@ final class VaultStore: ObservableObject {
                     originalName: "导入项目.\(fileExtension)",
                     capturedAt: capturedAt
                 )
+                if let identifier = selection.itemIdentifier {
+                    importedAssetIdentifiers.append(identifier)
+                }
             } catch {
                 failures += 1
             }
         }
         if failures > 0 {
             errorMessage = "有 \(failures) 个项目未能导入，已成功的项目不受影响。"
+        }
+        return importedAssetIdentifiers
+    }
+
+    func deleteSystemAssets(localIdentifiers: [String]) async throws {
+        guard !localIdentifiers.isEmpty else { return }
+        let status = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
+        guard status == .authorized || status == .limited else {
+            throw ValidationError("没有照片库修改权限，系统原件已保留。")
+        }
+        let assets = PHAsset.fetchAssets(withLocalIdentifiers: localIdentifiers, options: nil)
+        guard assets.count > 0 else {
+            throw ValidationError("找不到可删除的系统原件，它们可能已被移动或删除。")
+        }
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            PHPhotoLibrary.shared().performChanges({
+                PHAssetChangeRequest.deleteAssets(assets)
+            }) { success, error in
+                if success {
+                    continuation.resume()
+                } else {
+                    continuation.resume(throwing: error ?? ValidationError("系统未完成删除，原件已保留。"))
+                }
+            }
         }
     }
 
