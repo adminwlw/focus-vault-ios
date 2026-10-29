@@ -96,6 +96,10 @@ jobs:
           /usr/libexec/PlistBuddy -c 'Print :UILaunchScreen' "$APP_PATH/Info.plist" >/dev/null
           /usr/libexec/PlistBuddy -c 'Print :NSCameraUsageDescription' "$APP_PATH/Info.plist" >/dev/null
           /usr/libexec/PlistBuddy -c 'Print :NSPhotoLibraryUsageDescription' "$APP_PATH/Info.plist" >/dev/null
+          test -s "$APP_PATH/Assets.car"
+          test -s "$APP_PATH/PrivacyInfo.xcprivacy"
+          plutil -lint "$APP_PATH/PrivacyInfo.xcprivacy"
+          compgen -G "$APP_PATH/AppIcon*.png" >/dev/null
           ditto -c -k --sequesterRsrc --keepParent build/Payload build/FocusVault-0.1.0-unsigned.ipa
           shasum -a 256 build/FocusVault-0.1.0-unsigned.ipa > build/FocusVault-0.1.0-unsigned.ipa.sha256
 
@@ -111,6 +115,7 @@ jobs:
             build/UITest-SE.xcresult
             build/UITest-ProMax.xcresult
             build/ui-screens
+            build/*.log
           if-no-files-found: error
           retention-days: 30
 
