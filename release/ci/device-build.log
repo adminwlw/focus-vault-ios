@@ -25,41 +25,45 @@ GatherProvisioningInputs
 
 CreateBuildDescription
 
-ExecuteExternalTool /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -x c -c /dev/null
-
 ExecuteExternalTool /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+
+ExecuteExternalTool /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -x c -c /dev/null
 
 ExecuteExternalTool /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
 
-Build description signature: 69ebf336435f0257cb40e8d6b0d845d3
-Build description path: /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/XCBuildData/69ebf336435f0257cb40e8d6b0d845d3.xcbuilddata
+Build description signature: 1fa6b7cb572d0600902839264944810f
+Build description path: /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/XCBuildData/1fa6b7cb572d0600902839264944810f.xcbuilddata
 ClangStatCache /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/SDKStatCaches.noindex/iphoneos18.5-22F76-a529daf784b3616c7c04a36aeb7f5c05.sdkstatcache
     cd /Users/runner/work/photo-organizer/photo-organizer/FocusVault.xcodeproj
     /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -o /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/SDKStatCaches.noindex/iphoneos18.5-22F76-a529daf784b3616c7c04a36aeb7f5c05.sdkstatcache
-
-CreateBuildDirectory /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products
-    cd /Users/runner/work/photo-organizer/photo-organizer/FocusVault.xcodeproj
-    builtin-create-build-directory /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products
 
 CreateBuildDirectory /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex
     cd /Users/runner/work/photo-organizer/photo-organizer/FocusVault.xcodeproj
     builtin-create-build-directory /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex
 
-CreateBuildDirectory /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos
+CreateBuildDirectory /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products
     cd /Users/runner/work/photo-organizer/photo-organizer/FocusVault.xcodeproj
-    builtin-create-build-directory /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos
-
-CreateBuildDirectory /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Release-iphoneos
-    cd /Users/runner/work/photo-organizer/photo-organizer/FocusVault.xcodeproj
-    builtin-create-build-directory /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Release-iphoneos
+    builtin-create-build-directory /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products
 
 WriteAuxiliaryFile /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault-b28f3ce91a9298a091f52c4425a72409-VFS-iphoneos/all-product-headers.yaml
     cd /Users/runner/work/photo-organizer/photo-organizer/FocusVault.xcodeproj
     write-file /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault-b28f3ce91a9298a091f52c4425a72409-VFS-iphoneos/all-product-headers.yaml
 
+CreateBuildDirectory /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Release-iphoneos
+    cd /Users/runner/work/photo-organizer/photo-organizer/FocusVault.xcodeproj
+    builtin-create-build-directory /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Release-iphoneos
+
+CreateBuildDirectory /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos
+    cd /Users/runner/work/photo-organizer/photo-organizer/FocusVault.xcodeproj
+    builtin-create-build-directory /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos
+
 WriteAuxiliaryFile /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/Objects-normal/arm64/FocusVault_const_extract_protocols.json (in target 'FocusVault' from project 'FocusVault')
     cd /Users/runner/work/photo-organizer/photo-organizer
     write-file /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/Objects-normal/arm64/FocusVault_const_extract_protocols.json
+
+WriteAuxiliaryFile /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/Objects-normal/arm64/FocusVault.SwiftFileList (in target 'FocusVault' from project 'FocusVault')
+    cd /Users/runner/work/photo-organizer/photo-organizer
+    write-file /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/Objects-normal/arm64/FocusVault.SwiftFileList
 
 WriteAuxiliaryFile /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/Objects-normal/arm64/FocusVault.SwiftConstValuesFileList (in target 'FocusVault' from project 'FocusVault')
     cd /Users/runner/work/photo-organizer/photo-organizer
@@ -68,10 +72,6 @@ WriteAuxiliaryFile /Users/runner/work/photo-organizer/photo-organizer/build/Deri
 WriteAuxiliaryFile /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/Objects-normal/arm64/FocusVault.LinkFileList (in target 'FocusVault' from project 'FocusVault')
     cd /Users/runner/work/photo-organizer/photo-organizer
     write-file /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/Objects-normal/arm64/FocusVault.LinkFileList
-
-WriteAuxiliaryFile /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/Objects-normal/arm64/FocusVault.SwiftFileList (in target 'FocusVault' from project 'FocusVault')
-    cd /Users/runner/work/photo-organizer/photo-organizer
-    write-file /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/Objects-normal/arm64/FocusVault.SwiftFileList
 
 WriteAuxiliaryFile /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/Objects-normal/arm64/FocusVault-OutputFileMap.json (in target 'FocusVault' from project 'FocusVault')
     cd /Users/runner/work/photo-organizer/photo-organizer
@@ -141,14 +141,6 @@ SwiftMergeGeneratedHeaders /Users/runner/work/photo-organizer/photo-organizer/bu
     cd /Users/runner/work/photo-organizer/photo-organizer
     builtin-swiftHeaderTool -arch arm64 /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/Objects-normal/arm64/FocusVault-Swift.h -o /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/DerivedSources/FocusVault-Swift.h
 
-Copy /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos/FocusVault.swiftmodule/arm64-apple-ios.swiftmodule /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/Objects-normal/arm64/FocusVault.swiftmodule (in target 'FocusVault' from project 'FocusVault')
-    cd /Users/runner/work/photo-organizer/photo-organizer
-    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/Objects-normal/arm64/FocusVault.swiftmodule /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos/FocusVault.swiftmodule/arm64-apple-ios.swiftmodule
-
-Copy /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos/FocusVault.swiftmodule/arm64-apple-ios.swiftdoc /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/Objects-normal/arm64/FocusVault.swiftdoc (in target 'FocusVault' from project 'FocusVault')
-    cd /Users/runner/work/photo-organizer/photo-organizer
-    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/Objects-normal/arm64/FocusVault.swiftdoc /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos/FocusVault.swiftmodule/arm64-apple-ios.swiftdoc
-
 Copy /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos/FocusVault.swiftmodule/arm64-apple-ios.abi.json /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/Objects-normal/arm64/FocusVault.abi.json (in target 'FocusVault' from project 'FocusVault')
     cd /Users/runner/work/photo-organizer/photo-organizer
     builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/Objects-normal/arm64/FocusVault.abi.json /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos/FocusVault.swiftmodule/arm64-apple-ios.abi.json
@@ -157,20 +149,28 @@ Copy /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/
     cd /Users/runner/work/photo-organizer/photo-organizer
     builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/Objects-normal/arm64/FocusVault.swiftsourceinfo /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos/FocusVault.swiftmodule/Project/arm64-apple-ios.swiftsourceinfo
 
+Copy /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos/FocusVault.swiftmodule/arm64-apple-ios.swiftdoc /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/Objects-normal/arm64/FocusVault.swiftdoc (in target 'FocusVault' from project 'FocusVault')
+    cd /Users/runner/work/photo-organizer/photo-organizer
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/Objects-normal/arm64/FocusVault.swiftdoc /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos/FocusVault.swiftmodule/arm64-apple-ios.swiftdoc
+
+Copy /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos/FocusVault.swiftmodule/arm64-apple-ios.swiftmodule /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/Objects-normal/arm64/FocusVault.swiftmodule (in target 'FocusVault' from project 'FocusVault')
+    cd /Users/runner/work/photo-organizer/photo-organizer
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/Objects-normal/arm64/FocusVault.swiftmodule /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos/FocusVault.swiftmodule/arm64-apple-ios.swiftmodule
+
 Ld /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos/FocusVault.app/FocusVault normal (in target 'FocusVault' from project 'FocusVault')
     cd /Users/runner/work/photo-organizer/photo-organizer
     /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-ios16.0 -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk -Os -L/Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Release-iphoneos -L/Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos -F/Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/EagerLinkingTBDs/Release-iphoneos -F/Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos -filelist /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/Objects-normal/arm64/FocusVault.LinkFileList -Xlinker -rpath -Xlinker @executable_path/Frameworks -dead_strip -Xlinker -object_path_lto -Xlinker /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/Objects-normal/arm64/FocusVault_lto.o -Xlinker -debug_variant -Xlinker -dependency_info -Xlinker /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/Objects-normal/arm64/FocusVault_dependency_info.dat -fobjc-link-runtime -fprofile-instr-generate -L/Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos -L/usr/lib/swift -Xlinker -add_ast_path -Xlinker /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/Objects-normal/arm64/FocusVault.swiftmodule -o /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos/FocusVault.app/FocusVault
-
-ExtractAppIntentsMetadata (in target 'FocusVault' from project 'FocusVault')
-    cd /Users/runner/work/photo-organizer/photo-organizer
-    /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name FocusVault --sdk-root /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk --xcode-version 16F6 --platform-family iOS --deployment-target 16.0 --bundle-identifier com.sim360.focusvault --output /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos/FocusVault.app --target-triple arm64-apple-ios16.0 --binary-file /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos/FocusVault.app/FocusVault --dependency-file /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/Objects-normal/arm64/FocusVault_dependency_info.dat --stringsdata-file /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/Objects-normal/arm64/FocusVault.SwiftFileList --metadata-file-list /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/FocusVault.DependencyMetadataFileList --static-metadata-file-list /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/FocusVault.DependencyStaticMetadataFileList --swift-const-vals-list /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/Objects-normal/arm64/FocusVault.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --validate-assistant-intents --no-app-shortcuts-localization
-2026-10-29 02:36:26.166 appintentsmetadataprocessor[8448:32681] Starting appintentsmetadataprocessor export
-2026-10-29 02:36:26.169 appintentsmetadataprocessor[8448:32681] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
 
 CopySwiftLibs /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos/FocusVault.app (in target 'FocusVault' from project 'FocusVault')
     cd /Users/runner/work/photo-organizer/photo-organizer
     builtin-swiftStdLibTool --copy --verbose --scan-executable /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos/FocusVault.app/FocusVault --scan-folder /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos/FocusVault.app/Frameworks --scan-folder /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos/FocusVault.app/PlugIns --scan-folder /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos/FocusVault.app/SystemExtensions --scan-folder /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos/FocusVault.app/Extensions --platform iphoneos --toolchain /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos/FocusVault.app/Frameworks --strip-bitcode --strip-bitcode-tool /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os
 Ignoring --strip-bitcode because --sign was not passed
+
+ExtractAppIntentsMetadata (in target 'FocusVault' from project 'FocusVault')
+    cd /Users/runner/work/photo-organizer/photo-organizer
+    /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name FocusVault --sdk-root /Applications/Xcode_16.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk --xcode-version 16F6 --platform-family iOS --deployment-target 16.0 --bundle-identifier com.sim360.focusvault --output /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos/FocusVault.app --target-triple arm64-apple-ios16.0 --binary-file /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos/FocusVault.app/FocusVault --dependency-file /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/Objects-normal/arm64/FocusVault_dependency_info.dat --stringsdata-file /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/Objects-normal/arm64/FocusVault.SwiftFileList --metadata-file-list /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/FocusVault.DependencyMetadataFileList --static-metadata-file-list /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/FocusVault.DependencyStaticMetadataFileList --swift-const-vals-list /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/Objects-normal/arm64/FocusVault.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --validate-assistant-intents --no-app-shortcuts-localization
+2026-10-29 02:39:32.257 appintentsmetadataprocessor[8689:34834] Starting appintentsmetadataprocessor export
+2026-10-29 02:39:32.259 appintentsmetadataprocessor[8689:34834] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
 
 GenerateDSYMFile /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos/FocusVault.app.dSYM /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos/FocusVault.app/FocusVault (in target 'FocusVault' from project 'FocusVault')
     cd /Users/runner/work/photo-organizer/photo-organizer
@@ -179,8 +179,8 @@ GenerateDSYMFile /Users/runner/work/photo-organizer/photo-organizer/build/Derive
 AppIntentsSSUTraining (in target 'FocusVault' from project 'FocusVault')
     cd /Users/runner/work/photo-organizer/photo-organizer
     /Applications/Xcode_16.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsnltrainingprocessor --infoplist-path /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos/FocusVault.app/Info.plist --temp-dir-path /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/ssu --bundle-id com.sim360.focusvault --product-path /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos/FocusVault.app --extracted-metadata-path /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos/FocusVault.app/Metadata.appintents --metadata-file-list /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Intermediates.noindex/FocusVault.build/Release-iphoneos/FocusVault.build/FocusVault.DependencyMetadataFileList --archive-ssu-assets
-2026-10-29 02:36:26.196 appintentsnltrainingprocessor[8450:32684] Parsing options for appintentsnltrainingprocessor
-2026-10-29 02:36:26.197 appintentsnltrainingprocessor[8450:32684] No AppShortcuts found - Skipping.
+2026-10-29 02:39:32.276 appintentsnltrainingprocessor[8691:34840] Parsing options for appintentsnltrainingprocessor
+2026-10-29 02:39:32.277 appintentsnltrainingprocessor[8691:34840] No AppShortcuts found - Skipping.
 
 RegisterExecutionPolicyException /Users/runner/work/photo-organizer/photo-organizer/build/DerivedData/Build/Products/Release-iphoneos/FocusVault.app (in target 'FocusVault' from project 'FocusVault')
     cd /Users/runner/work/photo-organizer/photo-organizer

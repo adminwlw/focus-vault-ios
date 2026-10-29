@@ -1,0 +1,4 @@
+Query chain:
+ →Find: Target Application 'com.sim360.focusvault'
+  ↪︎Find: Descendants matching type NavigationBar
+    ↪︎Find: Elements matching predicate '"私人空间" IN identifiers'

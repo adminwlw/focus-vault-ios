@@ -1,3 +1,386 @@
 [
-
+  {
+    "attachments" : [
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "BFBF8324-A6C3-40D1-B837-5AA33B7D2698.txt",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "App UI hierarchy for com.sim360_0_6BB0F3F2-7217-4555-AF64-B365F3806EA4.focusvault",
+        "timestamp" : 1793241788.815
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "C07F1B0F-3BE7-4A60-8CA9-BFD495BA9575",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "UI Snapshot 2026-10-29 at 02.43.08 AM",
+        "timestamp" : 1793241788.815
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "DD31F95C-4F58-44B3-8885-AB32ECFC6B82.txt",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "App UI hierarchy for com.sim360_0_EA41BD46-FDF5-4B57-8ABF-CC8E97D4B092.focusvault",
+        "timestamp" : 1793241785.885
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "1E7A5A59-3B1E-47C4-A012-81BAA601CE9B",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "UI Snapshot 2026-10-29 at 02.43.05 AM",
+        "timestamp" : 1793241785.885
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "E1F411B9-08B0-40B3-AF53-E17231A591B6.txt",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Debug description for `\"私人空间\" NavigationBar`_0_09DA4299-1F11-4921-9C70-F3337C97EC5A.txt",
+        "timestamp" : 1793241785.839
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "0586D6AB-F41E-4932-ADB1-F77C40E28DA9.txt",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Debug description for `\"私人空间\" NavigationBar`_0_A056DFD0-2088-4803-B7B8-691E07232DD5.txt",
+        "timestamp" : 1793241784.89
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "6C7789FC-8F58-4E5C-A4AB-9577202B93A0.txt",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Debug description for `\"私人空间\" NavigationBar`_0_3607282C-0B6E-475E-8269-32D2D6E29F4D.txt",
+        "timestamp" : 1793241783.917
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "72CD6A2E-8F87-42B6-AD0F-BCDB0159BDC7.txt",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Debug description for `\"私人空间\" NavigationBar`_0_481D3331-3C4A-4E62-9B12-67034C65D700.txt",
+        "timestamp" : 1793241782.855
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "06B2A0D8-36C3-4D75-BC4B-3F84EEA69CDE.txt",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Debug description for `\"私人空间\" NavigationBar`_0_FF201CC9-4DD4-4BBB-87B9-C4918C8D43EB.txt",
+        "timestamp" : 1793241781.901
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "F2AC9EDD-AC02-4AAB-A2C2-2765209C3F7F",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "UI Snapshot 2026-10-29 at 02.43.00 AM",
+        "timestamp" : 1793241780.193
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "029B28D0-924A-49BA-8DD4-CE6C880AE5E0",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Synthesized Event 2026-10-29 at 02.43.00 AM",
+        "timestamp" : 1793241780.534
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "21344E35-B8C2-4522-8BA4-6890CFC852FF",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "UI Snapshot 2026-10-29 at 02.42.59 AM",
+        "timestamp" : 1793241779.714
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "3AFF14A8-2C92-49C4-9FA9-EF286FCC3FD5",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Synthesized Event 2026-10-29 at 02.43.00 AM",
+        "timestamp" : 1793241780.049
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "CA316D04-7477-4CBB-A6E0-A0719C4CCD38",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "UI Snapshot 2026-10-29 at 02.42.58 AM",
+        "timestamp" : 1793241778.756
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "8FF1E8DD-5EE6-4E49-A2A5-18FB5E3C59E0",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Synthesized Event 2026-10-29 at 02.42.59 AM",
+        "timestamp" : 1793241779.618
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "9D373B9C-C374-4CE9-ABCC-10487C06D125",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "UI Snapshot 2026-10-29 at 02.42.57 AM",
+        "timestamp" : 1793241777.866
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "37488D82-53D5-4E4F-B2C3-04025C254BB6",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Synthesized Event 2026-10-29 at 02.42.58 AM",
+        "timestamp" : 1793241778.186
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "CCE94FAF-145E-4A2D-A878-5133D6638097",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "UI Snapshot 2026-10-29 at 02.42.57 AM",
+        "timestamp" : 1793241777.474
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "DEC67349-4C6A-42F8-86F4-D2491141EF96",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Synthesized Event 2026-10-29 at 02.42.57 AM",
+        "timestamp" : 1793241777.773
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "A5230721-22E3-4FFE-A2ED-1F461A334AE7",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "UI Snapshot 2026-10-29 at 02.42.55 AM",
+        "timestamp" : 1793241775.285
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "210A8E98-7C96-4FB7-A08A-184827A171A8",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Synthesized Event 2026-10-29 at 02.42.56 AM",
+        "timestamp" : 1793241776.038
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "232E2417-F338-40C7-A8C3-A3007E90863B",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "UI Snapshot 2026-10-29 at 02.42.54 AM",
+        "timestamp" : 1793241774.43
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "0608CB6D-B456-467A-AF74-EB9BB20F704C",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Synthesized Event 2026-10-29 at 02.42.55 AM",
+        "timestamp" : 1793241775.097
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "D17BC7B1-23C9-460F-9B59-D2513733116F",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "UI Snapshot 2026-10-29 at 02.42.53 AM",
+        "timestamp" : 1793241773.211
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "8E9CF0DF-0D9F-40D7-97E1-5A17723EAF1D",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Synthesized Event 2026-10-29 at 02.42.54 AM",
+        "timestamp" : 1793241774.071
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "C1759FF2-D223-4747-8B5F-A83465E85317",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "UI Snapshot 2026-10-29 at 02.42.52 AM",
+        "timestamp" : 1793241772.444
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "E90D5CB1-06BB-4934-8AF5-BF009697BB75",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Synthesized Event 2026-10-29 at 02.42.52 AM",
+        "timestamp" : 1793241772.738
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "9E0DFFE5-594C-4346-9FD4-B7271AC14D57",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "UI Snapshot 2026-10-29 at 02.42.51 AM",
+        "timestamp" : 1793241771.907
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "E2E4ADF1-4905-4455-9176-F4AC4D07A24F",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Synthesized Event 2026-10-29 at 02.42.52 AM",
+        "timestamp" : 1793241772.346
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "56E6B0B5-77B9-4F84-9603-29877D81837C.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "03-manual-timer-landscape_0_A1F677AD-EFD3-4E04-B700-C4F2650F1475.png",
+        "timestamp" : 1793241771.427
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "CBFD33E7-5E91-45E9-8C08-43FAE290249D",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "UI Snapshot 2026-10-29 at 02.42.50 AM",
+        "timestamp" : 1793241770.584
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "466B7AD4-293C-458B-AFF1-98382AF4A66E",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Synthesized Event 2026-10-29 at 02.42.51 AM",
+        "timestamp" : 1793241771.049
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "4733D6EA-DCE5-45E8-BE1E-780AE9D4E15C.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "02-manual-timer-portrait_0_C90B186A-A8AB-47A1-BF45-701B4AA3FD65.png",
+        "timestamp" : 1793241768.825
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "1221B6D2-183F-4C14-8E01-CC7ACE8B2A73",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Synthesized Event 2026-10-29 at 02.42.47 AM",
+        "timestamp" : 1793241767.014
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "4A0026C3-CF0D-4B6F-8076-7B270B8B13E4",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Synthesized Event 2026-10-29 at 02.42.45 AM",
+        "timestamp" : 1793241765.58
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "D1ADCEC1-58CD-405C-A9FB-F34A191E50BB",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Synthesized Event 2026-10-29 at 02.42.43 AM",
+        "timestamp" : 1793241763.82
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "CA079AD9-3744-457A-9C9C-E0B2BF2D8F24",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Synthesized Event 2026-10-29 at 02.42.42 AM",
+        "timestamp" : 1793241762.331
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "E588E698-7B11-4CCD-9A1F-BE259BF05BB5",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Synthesized Event 2026-10-29 at 02.42.40 AM",
+        "timestamp" : 1793241760.985
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "BA524048-77F9-46F2-818A-A09EC71BDAF7.png",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "01-first-run-password_0_52DDC048-EF25-4864-9009-0BFA2D8B6D31.png",
+        "timestamp" : 1793241759.784
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "E19F3710-D6B8-4CC6-B5C0-D52D51DFC6C8.mp4",
+        "isAssociatedWithFailure" : false,
+        "suggestedHumanReadableName" : "Screen Recording 2026-10-29 at 02.42.32 AM.mp4",
+        "timestamp" : 1793241752.83
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "4D0F92FC-B2BA-44AD-89A4-2DF64AA13951.txt",
+        "isAssociatedWithFailure" : true,
+        "suggestedHumanReadableName" : "App UI hierarchy for com.sim360_0_4EE13359-3C69-421E-A148-A2AEAB2B37A6.focusvault",
+        "timestamp" : 1793241788.869
+      },
+      {
+        "configurationName" : "Test Scheme Action",
+        "deviceId" : "9F3D563E-AF8A-4089-B32E-3ADADEB067F0",
+        "deviceName" : "iPhone 16 Pro Max",
+        "exportedFileName" : "ABCEA63C-C061-408A-B17A-1DA151F2CD4A",
+        "isAssociatedWithFailure" : true,
+        "suggestedHumanReadableName" : "UI Snapshot 2026-10-29 at 02.43.08 AM",
+        "timestamp" : 1793241788.869
+      }
+    ],
+    "testIdentifier" : "FocusVaultUITests/testFirstRunTimerAndVaultFlowFitsScreen()",
+    "testIdentifierURL" : "test://com.apple.xcode/FocusVault/FocusVaultUITests/FocusVaultUITests/testFirstRunTimerAndVaultFlowFitsScreen"
+  }
 ]
