@@ -46,6 +46,12 @@ final class FocusVaultUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["计时中"].waitForExistence(timeout: 3))
         app.buttons["结束"].tap()
 
+        let editableDuration = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "enabled == true"),
+            object: duration
+        )
+        XCTAssertEqual(XCTWaiter.wait(for: [editableDuration], timeout: 3), .completed)
+
         replaceText(in: duration, with: passcode)
         app.buttons["timer-start"].tap()
         let vaultTitle = app.navigationBars["私人空间"]
@@ -58,6 +64,7 @@ final class FocusVaultUITests: XCTestCase {
         field.tap()
         field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 40))
         field.typeText(value)
+        XCTAssertEqual(field.value as? String, value)
     }
 
     private func assertContained(_ element: XCUIElement, in app: XCUIApplication) {
