@@ -14,12 +14,10 @@ struct VaultSetupView: View {
             Form {
                 Section {
                     SecureField("设置口令", text: $passcode)
-                        .textContentType(.newPassword)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .accessibilityIdentifier("setup-passcode")
                     SecureField("再次输入", text: $confirmation)
-                        .textContentType(.newPassword)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .accessibilityIdentifier("setup-confirmation")

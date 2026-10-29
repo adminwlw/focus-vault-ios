@@ -2,6 +2,23 @@ import XCTest
 @testable import FocusVault
 
 final class FocusVaultTests: XCTestCase {
+    @MainActor
+    func testVaultAuthCreateLockAndVerify() throws {
+        try? SecureStore.delete(account: "vault-auth-v1")
+        try? SecureStore.delete(account: "vault-key-v1")
+        defer {
+            try? SecureStore.delete(account: "vault-auth-v1")
+            try? SecureStore.delete(account: "vault-key-v1")
+        }
+
+        let store = VaultAuthStore()
+        try store.create(passcode: "vault123", confirmation: "vault123", hint: "")
+        store.lock()
+
+        XCTAssertFalse(store.verify("wrong-password", quietly: true))
+        XCTAssertTrue(store.verify("vault123", quietly: true))
+    }
+
     func testAESRoundTrip() throws {
         let key = try CryptoBox.randomData(count: 32)
         let original = Data("private photo bytes".utf8)

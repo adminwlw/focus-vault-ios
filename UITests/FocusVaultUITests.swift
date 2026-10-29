@@ -22,6 +22,7 @@ final class FocusVaultUITests: XCTestCase {
         confirmation.tap()
         confirmation.typeText("vault123")
         app.buttons["setup-create"].tap()
+        XCTAssertTrue(setupTitle.waitForNonExistence(timeout: 5))
 
         let timerTitle = app.navigationBars["计时器"]
         XCTAssertTrue(timerTitle.waitForExistence(timeout: 5))
