@@ -26,16 +26,22 @@ jobs:
         run: xcodegen generate
 
       - name: Run unit tests
+        id: tests
+        continue-on-error: true
         run: |
+          set -o pipefail
           xcodebuild test \
             -project FocusVault.xcodeproj \
             -scheme FocusVault \
             -destination 'platform=iOS Simulator,name=iPhone 16 Pro,OS=latest' \
             -resultBundlePath build/TestResults.xcresult \
-            CODE_SIGNING_ALLOWED=NO
+            CODE_SIGNING_ALLOWED=NO 2>&1 | tee build/tests.log
 
       - name: Build device app without signing
+        id: device_build
+        continue-on-error: true
         run: |
+          set -o pipefail
           xcodebuild build \
             -project FocusVault.xcodeproj \
             -scheme FocusVault \
@@ -44,9 +50,10 @@ jobs:
             -destination 'generic/platform=iOS' \
             -derivedDataPath build/DerivedData \
             CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO
+            CODE_SIGNING_REQUIRED=NO 2>&1 | tee build/device-build.log
 
       - name: Package IPA
+        if: steps.device_build.outcome == 'success'
         run: |
           APP_PATH="build/DerivedData/Build/Products/Release-iphoneos/FocusVault.app"
           test -d "$APP_PATH"
@@ -58,6 +65,7 @@ jobs:
           shasum -a 256 build/FocusVault-0.1.0-unsigned.ipa > build/FocusVault-0.1.0-unsigned.ipa.sha256
 
       - name: Upload IPA and test results
+        if: steps.tests.outcome == 'success' && steps.device_build.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: FocusVault-iOS-0.1.0-build-1
@@ -68,15 +76,24 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Publish IPA to build branch
+      - name: Publish IPA or diagnostics to build branch
+        if: always()
         run: |
           mkdir -p release
-          cp build/FocusVault-0.1.0-unsigned.ipa release/
-          cp build/FocusVault-0.1.0-unsigned.ipa.sha256 release/
+          rm -rf release/ci
+          mkdir -p release/ci
+          test ! -f build/tests.log || cp build/tests.log release/ci/
+          test ! -f build/device-build.log || cp build/device-build.log release/ci/
+          test ! -f build/FocusVault-0.1.0-unsigned.ipa || cp build/FocusVault-0.1.0-unsigned.ipa release/
+          test ! -f build/FocusVault-0.1.0-unsigned.ipa.sha256 || cp build/FocusVault-0.1.0-unsigned.ipa.sha256 release/
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add -f release
           git diff --cached --quiet && exit 0
           git commit -m "build: publish unsigned IPA [skip ci]"
           git push origin HEAD:${GITHUB_REF_NAME}
+
+      - name: Fail workflow when verification failed
+        if: steps.tests.outcome != 'success' || steps.device_build.outcome != 'success'
+        run: exit 1
 
