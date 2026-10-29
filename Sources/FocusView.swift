@@ -50,6 +50,16 @@ struct FocusView: View {
                 lastValidMinutes = max(1, store.state.plannedSeconds / 60)
                 durationInput = String(lastValidMinutes)
             }
+            .onChange(of: focusedField) { field in
+                if field == .duration,
+                   isEditable,
+                   durationInput == String(lastValidMinutes) {
+                    durationInput = ""
+                } else if field != .duration,
+                          durationInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    durationInput = String(lastValidMinutes)
+                }
+            }
         }
     }
 
@@ -254,8 +264,8 @@ struct FocusView: View {
     }
 
     private func startOrUnlock() {
-        focusedField = nil
         let input = durationInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        focusedField = nil
         if authStore.hasVault, authStore.verify(input, quietly: true) {
             durationInput = String(lastValidMinutes)
             onVaultUnlocked()
