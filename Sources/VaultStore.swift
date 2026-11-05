@@ -64,6 +64,7 @@ final class VaultStore: ObservableObject {
             albums = []
         }
         try purgeExpiredTrash()
+        try cleanupOrphanedMedia()
         isLoaded = true
         } catch {
             lock()
@@ -332,9 +333,22 @@ final class VaultStore: ObservableObject {
         guard removing.allSatisfy({ $0.deletedAt != nil }) else { throw ValidationError("请先移到最近删除。") }
         // Persist the index first; a failed index write must never destroy referenced media.
         try commit(items.filter { !ids.contains($0.id) }, albums: albums)
+        var failed = false
         for item in removing {
-            try? fileManager.removeItem(at: mediaFileURL(for: item.id))
-            try? fileManager.removeItem(at: thumbnailFileURL(for: item.id))
+            for url in [mediaFileURL(for: item.id), thumbnailFileURL(for: item.id)] where fileManager.fileExists(atPath: url.path) {
+                do { try fileManager.removeItem(at: url) } catch { failed = true }
+            }
+        }
+        if failed { throw ValidationError("项目已移出列表，部分加密文件未能清理；下次解锁时会重试。") }
+    }
+
+    private func cleanupOrphanedMedia() throws {
+        let retained = Set(items.map { $0.id.uuidString + ".vault" })
+        for directory in [mediaURL, thumbnailURL] {
+            for url in try fileManager.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
+                where url.pathExtension == "vault" && !retained.contains(url.lastPathComponent) {
+                try fileManager.removeItem(at: url)
+            }
         }
     }
 

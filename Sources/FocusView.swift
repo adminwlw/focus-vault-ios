@@ -273,7 +273,7 @@ struct FocusView: View {
     private func startOrUnlock() {
         let input = durationInput.trimmingCharacters(in: .whitespacesAndNewlines)
         focusedField = nil
-        if authStore.hasVault, authStore.verify(input, quietly: true) {
+        if VaultAuthStore.isValidPasscode(input), authStore.hasVault, authStore.verify(input, quietly: true) {
             durationInput = String(lastValidMinutes)
             onVaultUnlocked()
             return

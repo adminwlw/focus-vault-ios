@@ -135,6 +135,13 @@ final class VaultWorkflowTests: XCTestCase {
         XCTAssertTrue(store.albums.isEmpty)
     }
 
+    func testBackupRejectsInvalidWorkFactorBeforeDerivation() throws {
+        let envelope = VaultBackupEnvelope(format: "FocusVaultBackup", version: 1,
+                                          salt: Data(repeating: 0, count: 16), iterations: -1,
+                                          encryptedPayload: Data())
+        XCTAssertThrowsError(try BackupCodec.decode(JSONEncoder().encode(envelope), password: "password"))
+    }
+
     func testStopwatchPauseResumeLapsAndRelaunch() throws {
         let suite = UUID().uuidString
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))

@@ -56,6 +56,12 @@ struct VaultView: View {
 
     var body: some View {
         presentedNavigation
+            .onChange(of: store.albums) { names in
+                if let selectedAlbum, !names.contains(selectedAlbum) {
+                    self.selectedAlbum = nil
+                    finishSelection()
+                }
+            }
             .alert("新建相册", isPresented: $showNewAlbum) {
                 TextField("相册名称", text: $newAlbumName)
                     .accessibilityIdentifier("album-name")
@@ -162,7 +168,7 @@ struct VaultView: View {
             .navigationTitle(selectedAlbum ?? (favoritesOnly ? "收藏" : "私人空间"))
             .navigationBarTitleDisplayMode(.large)
             .navigationDestination(for: VaultItem.self) { item in
-                VaultDetailView(itemID: item.id, onLock: onLock)
+                VaultDetailView(itemID: item.id, galleryIDs: visibleItems.map(\.id), onLock: onLock)
             }
             .toolbar { vaultToolbar }
             .overlay {
@@ -667,7 +673,8 @@ private struct VaultGridCell: View {
 private struct VaultDetailView: View {
     @EnvironmentObject private var store: VaultStore
     @Environment(\.dismiss) private var dismiss
-    let itemID: UUID
+    @State private var itemID: UUID
+    let galleryIDs: [UUID]
     let onLock: () -> Void
     @State private var image: UIImage?
     @State private var player: AVPlayer?
@@ -676,6 +683,12 @@ private struct VaultDetailView: View {
     @State private var confirmExport = false
     @State private var confirmDelete = false
     @State private var loadError: String?
+
+    init(itemID: UUID, galleryIDs: [UUID], onLock: @escaping () -> Void) {
+        _itemID = State(initialValue: itemID)
+        self.galleryIDs = galleryIDs
+        self.onLock = onLock
+    }
 
     private var item: VaultItem? {
         store.items.first { $0.id == itemID }
@@ -702,6 +715,16 @@ private struct VaultDetailView: View {
                 .toolbarColorScheme(.dark, for: .navigationBar)
                 .toolbarBackground(.black, for: .navigationBar)
                 .toolbar {
+                    ToolbarItemGroup(placement: .bottomBar) {
+                        Button { browse(-1) } label: { Label("上一项", systemImage: "chevron.left") }
+                            .disabled((galleryIDs.firstIndex(of: itemID) ?? 0) == 0)
+                        Spacer()
+                        Text("\((galleryIDs.firstIndex(of: itemID) ?? 0) + 1) / \(galleryIDs.count)")
+                            .font(.footnote.monospacedDigit())
+                        Spacer()
+                        Button { browse(1) } label: { Label("下一项", systemImage: "chevron.right") }
+                            .disabled((galleryIDs.firstIndex(of: itemID) ?? 0) >= galleryIDs.count - 1)
+                    }
                     ToolbarItemGroup(placement: .navigationBarTrailing) {
                         Button(action: onLock) {
                             Label("锁定退出", systemImage: "lock.fill").labelStyle(.iconOnly)
@@ -791,6 +814,15 @@ private struct VaultDetailView: View {
         } catch {
             loadError = error.localizedDescription
         }
+    }
+
+    private func browse(_ offset: Int) {
+        guard let current = galleryIDs.firstIndex(of: itemID), galleryIDs.indices.contains(current + offset) else { return }
+        player?.pause()
+        player = nil
+        image = nil
+        store.cleanupTemporaryExports()
+        itemID = galleryIDs[current + offset]
     }
 
     private func prepareShare(_ item: VaultItem) {

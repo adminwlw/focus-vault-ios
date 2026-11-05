@@ -117,6 +117,14 @@ final class FocusVaultUITests: XCTestCase {
         XCTAssertTrue(timerTitle.waitForExistence(timeout: 5))
         XCTAssertFalse(app.navigationBars["旅行"].exists)
         keepScreenshot("08-background-locked")
+        replaceText(in: duration, with: "1")
+        app.buttons["timer-start"].tap()
+        XCTAssertTrue(app.staticTexts["计时中"].waitForExistence(timeout: 3))
+        replaceText(in: duration, with: passcode)
+        app.buttons["timer-confirm-input"].tap()
+        XCTAssertTrue(vaultTitle.waitForExistence(timeout: 5))
+        app.buttons["vault-lock"].tap()
+        XCTAssertTrue(app.staticTexts["计时中"].waitForExistence(timeout: 3))
     }
 
     private func replaceText(in field: XCUIElement, with value: String) {
