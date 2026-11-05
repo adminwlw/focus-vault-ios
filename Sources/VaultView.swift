@@ -149,6 +149,12 @@ struct VaultView: View {
             VStack(spacing: 0) {
                 filterBar
                 vaultContent
+                    .contentShape(Rectangle())
+                    .simultaneousGesture(DragGesture(minimumDistance: 30).onEnded { value in
+                        guard path.isEmpty, value.translation.width > 100,
+                              abs(value.translation.height) < value.translation.width / 2 else { return }
+                        onLock()
+                    })
                 if !isSelecting {
                     Text("\(visibleItems.count) 个项目 · 右滑可锁定退出")
                         .font(.footnote)
@@ -156,12 +162,6 @@ struct VaultView: View {
                         .padding(10)
                 }
             }
-            .contentShape(Rectangle())
-            .simultaneousGesture(DragGesture(minimumDistance: 30).onEnded { value in
-                guard path.isEmpty, value.translation.width > 100,
-                      abs(value.translation.height) < value.translation.width / 2 else { return }
-                onLock()
-            })
             .accessibilityAction(.escape, onLock)
             .safeAreaInset(edge: .bottom) {
                 if isSelecting { selectionBar }
