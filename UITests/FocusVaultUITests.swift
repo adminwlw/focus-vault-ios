@@ -117,20 +117,19 @@ final class FocusVaultUITests: XCTestCase {
         app.buttons["vault-import"].tap()
         let pickerCancel = app.buttons["Cancel"].exists ? app.buttons["Cancel"] : app.buttons["取消"]
         XCTAssertTrue(pickerCancel.waitForExistence(timeout: 5))
-        let photoCollection = app.collectionViews.firstMatch
-        XCTAssertTrue(photoCollection.waitForExistence(timeout: 20))
-        XCTAssertTrue(photoCollection.cells.firstMatch.waitForExistence(timeout: 10))
+        let pickerPhoto = app.images.matching(identifier: "PXGGridLayout-Info").firstMatch
+        XCTAssertTrue(pickerPhoto.waitForExistence(timeout: 20))
         keepScreenshot("08-system-photo-picker")
-        photoCollection.cells.firstMatch.tap()
-        let addPhoto = app.buttons["添加"].exists ? app.buttons["添加"] : app.buttons["Add"]
+        pickerPhoto.tap()
+        let addPhoto = app.navigationBars["Photos"].buttons["Done"]
         XCTAssertTrue(addPhoto.waitForExistence(timeout: 5))
         addPhoto.tap()
         XCTAssertTrue(app.navigationBars["旅行"].waitForExistence(timeout: 5))
-        if app.buttons["保留系统原件"].waitForExistence(timeout: 10) {
+        let keepOriginal = app.buttons["保留系统原件"]
+        XCTAssertTrue(keepOriginal.waitForExistence(timeout: 10))
+        if keepOriginal.exists {
             keepScreenshot("09-import-original-choice")
-            app.buttons["保留系统原件"].tap()
-        } else if app.alerts.buttons["好"].exists {
-            app.alerts.buttons["好"].tap()
+            keepOriginal.tap()
         }
         XCTAssertTrue(app.buttons.matching(identifier: "vault-media-link").firstMatch.waitForExistence(timeout: 5))
         keepScreenshot("10-imported-into-album")
