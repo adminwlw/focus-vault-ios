@@ -32,6 +32,7 @@ final class VaultStore: ObservableObject {
         thumbnailURL = rootURL.appendingPathComponent("Thumbnails", isDirectory: true)
         indexURL = rootURL.appendingPathComponent("index.vault")
         exportURL = fileManager.temporaryDirectory.appendingPathComponent("FocusVaultExports", isDirectory: true)
+        try? fileManager.removeItem(at: exportURL)
     }
 
     var activeItems: [VaultItem] {

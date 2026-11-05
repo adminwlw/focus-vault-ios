@@ -125,6 +125,25 @@ final class VaultWorkflowTests: XCTestCase {
         XCTAssertEqual(try store.data(for: local), original)
     }
 
+    func testBackupRestoresIntoAnotherVaultWithDifferentKey() throws {
+        try prepare()
+        defer { cleanup() }
+        let original = photo()
+        try store.createAlbum("空相册")
+        try store.importData(original, kind: .photo, originalName: "sample.png", album: "生活")
+        let backup = try store.createBackup(password: "backup-password")
+        let saved = directory.appendingPathComponent("transfer.focusvault")
+        try Data(contentsOf: backup).write(to: saved)
+        let secondDirectory = directory.appendingPathComponent("other-vault")
+        let other = VaultStore(directory: secondDirectory)
+        try other.unlock(using: CryptoBox.randomData(count: 32))
+        try other.restoreBackup(from: saved, password: "backup-password")
+        XCTAssertEqual(other.activeItems.count, 1)
+        XCTAssertEqual(Set(other.albums), ["空相册", "生活"])
+        XCTAssertEqual(try other.data(for: other.items[0]), original)
+        other.lock()
+    }
+
     func testWrongKeyClearsLoadedContent() throws {
         try prepare()
         defer { cleanup() }

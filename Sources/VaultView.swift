@@ -292,6 +292,7 @@ struct VaultView: View {
             NavigationLink(value: item) {
                 VaultGridCell(item: item)
             }
+            .accessibilityIdentifier("vault-media-link")
             .buttonStyle(.plain)
             .contextMenu { itemContextMenu(item) }
         }

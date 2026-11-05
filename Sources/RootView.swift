@@ -59,6 +59,9 @@ struct RootView: View {
         guard authStore.isUnlocked else { return }
         do {
             try vaultStore.unlock(using: authStore.vaultKey())
+            #if DEBUG
+            try UITestFixtures.seedMedia(in: vaultStore)
+            #endif
             showSetup = false
             showVault = true
         } catch {

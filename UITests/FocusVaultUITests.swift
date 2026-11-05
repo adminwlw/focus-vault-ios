@@ -4,6 +4,7 @@ final class FocusVaultUITests: XCTestCase {
     func testFirstRunTimerAndVaultFlowFitsScreen() throws {
         let app = XCUIApplication()
         let passcode = "12345678"
+        app.launchArguments = ["-ui-seed-media"]
         app.launch()
 
         let setupTitle = app.navigationBars["设置私人空间"]
@@ -75,7 +76,14 @@ final class FocusVaultUITests: XCTestCase {
         let vaultTitle = app.navigationBars["私人空间"]
         XCTAssertTrue(vaultTitle.waitForExistence(timeout: 5))
         assertContained(vaultTitle, in: app)
-        keepScreenshot("04-private-vault-empty")
+        keepScreenshot("04-private-vault-media")
+        app.buttons.matching(identifier: "vault-media-link").firstMatch.tap()
+        XCTAssertTrue(app.buttons["下一项"].waitForExistence(timeout: 5))
+        app.buttons["下一项"].tap()
+        XCTAssertTrue(app.buttons["上一项"].isEnabled)
+        keepScreenshot("05-photo-detail-next")
+        app.navigationBars.buttons["私人空间"].tap()
+        XCTAssertTrue(vaultTitle.waitForExistence(timeout: 5))
 
         app.buttons["vault-albums"].tap()
         app.buttons["albums-create"].tap()
@@ -84,10 +92,10 @@ final class FocusVaultUITests: XCTestCase {
         albumName.typeText("生活")
         app.alerts.buttons["保存"].tap()
         XCTAssertTrue(app.buttons["生活"].waitForExistence(timeout: 3))
-        keepScreenshot("05-empty-album-created")
+        keepScreenshot("06-empty-album-created")
         app.buttons["生活"].tap()
         XCTAssertTrue(app.navigationBars["生活"].waitForExistence(timeout: 3))
-        keepScreenshot("06-album-import-entry")
+        keepScreenshot("07-album-import-entry")
         let window = app.windows.firstMatch
         window.coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.65))
             .press(forDuration: 0.05, thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.65)))
@@ -109,14 +117,14 @@ final class FocusVaultUITests: XCTestCase {
         app.buttons["vault-import"].tap()
         let pickerCancel = app.buttons["Cancel"].exists ? app.buttons["Cancel"] : app.buttons["取消"]
         XCTAssertTrue(pickerCancel.waitForExistence(timeout: 5))
-        keepScreenshot("07-system-photo-picker")
+        keepScreenshot("08-system-photo-picker")
         pickerCancel.tap()
         XCTAssertTrue(app.navigationBars["旅行"].waitForExistence(timeout: 5))
         XCUIDevice.shared.press(.home)
         app.activate()
         XCTAssertTrue(timerTitle.waitForExistence(timeout: 5))
         XCTAssertFalse(app.navigationBars["旅行"].exists)
-        keepScreenshot("08-background-locked")
+        keepScreenshot("09-background-locked")
         replaceText(in: duration, with: "1")
         app.buttons["timer-start"].tap()
         XCTAssertTrue(app.staticTexts["计时中"].waitForExistence(timeout: 3))
