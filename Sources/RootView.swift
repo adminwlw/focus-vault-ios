@@ -17,8 +17,8 @@ struct RootView: View {
             }
             .tabItem { Label("计时", systemImage: "timer") }
 
-            HistoryView()
-            .tabItem { Label("记录", systemImage: "clock.arrow.circlepath") }
+            StopwatchView()
+            .tabItem { Label("秒表", systemImage: "stopwatch") }
 
             SettingsView()
                 .tabItem { Label("设置", systemImage: "gearshape") }
@@ -41,19 +41,7 @@ struct RootView: View {
         } message: {
             Text(vaultError ?? "未知错误")
         }
-        .overlay {
-            if scenePhase != .active {
-                ZStack {
-                    Color(uiColor: .systemBackground)
-                    Image(systemName: "timer")
-                        .font(.system(size: 44, weight: .light))
-                        .foregroundStyle(.secondary)
-                }
-                .ignoresSafeArea()
-                .transition(.opacity)
-                .zIndex(100)
-            }
-        }
+        .background(PrivacyScreen().frame(width: 0, height: 0))
         .onAppear {
             if !authStore.hasVault { showSetup = true }
         }
@@ -61,7 +49,7 @@ struct RootView: View {
             if newPhase == .active {
                 timerStore.refresh()
                 Task { await timerStore.refreshNotificationStatus() }
-            } else {
+            } else if newPhase == .background {
                 lockVault()
             }
         }
@@ -74,6 +62,8 @@ struct RootView: View {
             showSetup = false
             showVault = true
         } catch {
+            authStore.lock()
+            vaultStore.lock()
             vaultError = error.localizedDescription
         }
     }

@@ -55,6 +55,13 @@ struct VaultBackupPayload: Codable {
     let createdAt: Date
     let items: [VaultItem]
     let media: [String: Data]
+    var albums: [String]? = nil
+}
+
+struct VaultIndex: Codable {
+    var version = 2
+    var items: [VaultItem]
+    var albums: [String]
 }
 
 struct VaultBackupEnvelope: Codable {

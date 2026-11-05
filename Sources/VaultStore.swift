@@ -5,6 +5,7 @@ import PhotosUI
 import SwiftUI
 import UniformTypeIdentifiers
 import UIKit
+import AVFoundation
 
 @MainActor
 final class VaultStore: ObservableObject {
@@ -15,16 +16,18 @@ final class VaultStore: ObservableObject {
     private let indexURL: URL
     private let exportURL: URL
     private var keyData: Data?
+    private var sessionID = UUID()
 
     @Published private(set) var items: [VaultItem] = []
+    @Published private(set) var albums: [String] = []
     @Published private(set) var isLoaded = false
     @Published private(set) var isBusy = false
     @Published var errorMessage: String?
 
-    init(fileManager: FileManager = .default) {
+    init(fileManager: FileManager = .default, directory: URL? = nil) {
         self.fileManager = fileManager
         let applicationSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        rootURL = applicationSupport.appendingPathComponent("PrivateVault", isDirectory: true)
+        rootURL = directory ?? applicationSupport.appendingPathComponent("PrivateVault", isDirectory: true)
         mediaURL = rootURL.appendingPathComponent("Media", isDirectory: true)
         thumbnailURL = rootURL.appendingPathComponent("Thumbnails", isDirectory: true)
         indexURL = rootURL.appendingPathComponent("index.vault")
@@ -39,45 +42,61 @@ final class VaultStore: ObservableObject {
         items.filter { $0.deletedAt != nil }.sorted { ($0.deletedAt ?? .distantPast) > ($1.deletedAt ?? .distantPast) }
     }
 
-    var albums: [String] {
-        Array(Set(activeItems.compactMap(\.albumName))).sorted { $0.localizedStandardCompare($1) == .orderedAscending }
-    }
-
     func unlock(using key: Data) throws {
+        lock()
+        do {
+        sessionID = UUID()
         keyData = key
         try prepareDirectories()
         if fileManager.fileExists(atPath: indexURL.path) {
             let encrypted = try Data(contentsOf: indexURL)
             let plaintext = try CryptoBox.open(encrypted, using: key)
-            items = try JSONDecoder().decode([VaultItem].self, from: plaintext)
+            if let index = try? JSONDecoder().decode(VaultIndex.self, from: plaintext) {
+                guard index.version == 2 else { throw ValidationError("相册数据版本暂不受支持。") }
+                items = index.items
+                albums = index.albums
+            } else {
+                items = try JSONDecoder().decode([VaultItem].self, from: plaintext)
+                albums = Array(Set(items.compactMap(\.albumName))).sorted()
+            }
         } else {
             items = []
+            albums = []
         }
         try purgeExpiredTrash()
         isLoaded = true
+        } catch {
+            lock()
+            throw error
+        }
     }
 
     func lock() {
+        sessionID = UUID()
         items = []
+        albums = []
         keyData = nil
         isLoaded = false
         errorMessage = nil
         try? fileManager.removeItem(at: exportURL)
     }
 
-    func importSelections(_ selections: [PhotosPickerItem]) async -> [String] {
-        guard !selections.isEmpty else { return [] }
+    func importSelections(_ selections: [PhotosPickerItem], toAlbum album: String? = nil) async -> [String] {
+        guard !selections.isEmpty, isLoaded, !isBusy else { return [] }
+        let importSession = sessionID
         isBusy = true
         defer { isBusy = false }
         var failures = 0
         var importedAssetIdentifiers: [String] = []
 
         for selection in selections {
+            guard isLoaded, sessionID == importSession, !Task.isCancelled else { return [] }
             do {
                 guard let data = try await selection.loadTransferable(type: Data.self) else {
                     failures += 1
                     continue
                 }
+                guard isLoaded, sessionID == importSession, !Task.isCancelled else { return [] }
                 let kind: VaultMediaKind = selection.supportedContentTypes.contains(where: { $0.conforms(to: .movie) })
                     ? .video
                     : .photo
@@ -88,7 +107,8 @@ final class VaultStore: ObservableObject {
                     data,
                     kind: kind,
                     originalName: "导入项目.\(fileExtension)",
-                    capturedAt: capturedAt
+                    capturedAt: capturedAt,
+                    album: album
                 )
                 if let identifier = selection.itemIdentifier {
                     importedAssetIdentifiers.append(identifier)
@@ -97,7 +117,7 @@ final class VaultStore: ObservableObject {
                 failures += 1
             }
         }
-        if failures > 0 {
+        if failures > 0, isLoaded {
             errorMessage = "有 \(failures) 个项目未能导入，已成功的项目不受影响。"
         }
         return importedAssetIdentifiers
@@ -138,18 +158,19 @@ final class VaultStore: ObservableObject {
         }
     }
 
-    func importCapturedImage(_ image: UIImage) throws {
+    func importCapturedImage(_ image: UIImage, toAlbum album: String? = nil) throws {
         guard let data = image.jpegData(compressionQuality: 0.94) else {
             throw ValidationError("无法读取刚拍摄的照片。")
         }
-        try importData(data, kind: .photo, originalName: "相机拍摄.jpg", capturedAt: Date())
+        try importData(data, kind: .photo, originalName: "相机拍摄.jpg", capturedAt: Date(), album: album)
     }
 
     func importData(
         _ data: Data,
         kind: VaultMediaKind,
         originalName: String,
-        capturedAt: Date? = nil
+        capturedAt: Date? = nil,
+        album: String? = nil
     ) throws {
         guard let keyData else { throw ValidationError("私人空间尚未解锁。") }
         guard !data.isEmpty else { throw ValidationError("导入项目为空。") }
@@ -162,7 +183,7 @@ final class VaultStore: ObservableObject {
             capturedAt: capturedAt,
             mediaKind: kind,
             byteCount: data.count,
-            albumName: nil,
+            albumName: album,
             isFavorite: false,
             deletedAt: nil
         )
@@ -178,8 +199,8 @@ final class VaultStore: ObservableObject {
                     to: thumbnailFileURL(for: item.id)
                 )
             }
-            items.append(item)
-            try saveIndex()
+            if kind == .video { try createVideoThumbnail(data, id: item.id, key: keyData) }
+            try commit(items + [item], albums: albums + (album.map { [$0] } ?? []))
         } catch {
             try? fileManager.removeItem(at: mediaFile)
             try? fileManager.removeItem(at: thumbnailFileURL(for: item.id))
@@ -196,13 +217,16 @@ final class VaultStore: ObservableObject {
     func thumbnailData(for item: VaultItem) throws -> Data {
         guard let keyData else { throw ValidationError("私人空间尚未解锁。") }
         let url = thumbnailFileURL(for: item.id)
-        guard fileManager.fileExists(atPath: url.path) else { return try data(for: item) }
+        guard fileManager.fileExists(atPath: url.path) else {
+            if item.mediaKind == .video { throw ValidationError("视频尚无预览图。") }
+            return try data(for: item)
+        }
         return try CryptoBox.open(Data(contentsOf: url), using: keyData)
     }
 
     func temporaryExport(for item: VaultItem) throws -> URL {
         try fileManager.createDirectory(at: exportURL, withIntermediateDirectories: true)
-        let safeName = item.originalName.replacingOccurrences(of: "/", with: "-")
+        let safeName = URL(fileURLWithPath: item.originalName).lastPathComponent
         let url = exportURL.appendingPathComponent("\(item.id.uuidString)-\(safeName)")
         try protectedWrite(try data(for: item), to: url)
         return url
@@ -217,23 +241,59 @@ final class VaultStore: ObservableObject {
     }
 
     func assign(_ item: VaultItem, toAlbum album: String?) throws {
-        let cleaned = album?.trimmingCharacters(in: .whitespacesAndNewlines)
-        try update(item.id) { $0.albumName = cleaned?.isEmpty == true ? nil : cleaned }
+        try assign([item.id], toAlbum: album)
     }
 
     func assign(_ ids: Set<UUID>, toAlbum album: String?) throws {
-        let cleaned = album?.trimmingCharacters(in: .whitespacesAndNewlines)
-        for index in items.indices where ids.contains(items[index].id) {
-            items[index].albumName = cleaned?.isEmpty == true ? nil : cleaned
+        let cleaned = try album.map { try validAlbumName($0) }
+        var updated = items
+        for index in updated.indices where ids.contains(updated[index].id) {
+            updated[index].albumName = cleaned
         }
-        try saveIndex()
+        try commit(updated, albums: albums + (cleaned.map { [$0] } ?? []))
+    }
+
+    @discardableResult
+    func createAlbum(_ name: String, moving ids: Set<UUID> = []) throws -> String {
+        let cleaned = try validAlbumName(name)
+        guard !albums.contains(where: { $0.localizedCaseInsensitiveCompare(cleaned) == .orderedSame }) else {
+            throw ValidationError("已存在同名相册，请换一个名称。")
+        }
+        try assign(ids, toAlbum: cleaned)
+        return cleaned
+    }
+
+    func renameAlbum(_ name: String, to newName: String) throws {
+        let cleaned = try validAlbumName(newName)
+        guard albums.contains(name) else { throw ValidationError("相册不存在。") }
+        guard !albums.contains(where: { $0 != name && $0.localizedCaseInsensitiveCompare(cleaned) == .orderedSame }) else {
+            throw ValidationError("已存在同名相册。")
+        }
+        var updated = items
+        for index in updated.indices where updated[index].albumName == name { updated[index].albumName = cleaned }
+        try commit(updated, albums: albums.map { $0 == name ? cleaned : $0 })
+    }
+
+    func deleteAlbum(_ name: String) throws {
+        var updated = items
+        for index in updated.indices where updated[index].albumName == name { updated[index].albumName = nil }
+        try commit(updated, albums: albums.filter { $0 != name })
+    }
+
+    private func validAlbumName(_ name: String) throws -> String {
+        let cleaned = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleaned.isEmpty, cleaned.count <= 40, !cleaned.contains(where: \.isNewline) else {
+            throw ValidationError("相册名称请输入 1–40 个字符。")
+        }
+        return cleaned
     }
 
     func setFavorite(_ ids: Set<UUID>, value: Bool) throws {
-        for index in items.indices where ids.contains(items[index].id) {
-            items[index].isFavorite = value
+        var updated = items
+        for index in updated.indices where ids.contains(updated[index].id) {
+            updated[index].isFavorite = value
         }
-        try saveIndex()
+        try commit(updated, albums: albums)
     }
 
     func moveToTrash(_ item: VaultItem) throws {
@@ -242,10 +302,11 @@ final class VaultStore: ObservableObject {
 
     func moveToTrash(_ ids: Set<UUID>) throws {
         let deletedAt = Date()
-        for index in items.indices where ids.contains(items[index].id) {
-            items[index].deletedAt = deletedAt
+        var updated = items
+        for index in updated.indices where ids.contains(updated[index].id) {
+            updated[index].deletedAt = deletedAt
         }
-        try saveIndex()
+        try commit(updated, albums: albums)
     }
 
     func restore(_ item: VaultItem) throws {
@@ -253,30 +314,43 @@ final class VaultStore: ObservableObject {
     }
 
     func deletePermanently(_ item: VaultItem) throws {
-        try fileManager.removeItem(at: mediaFileURL(for: item.id))
-        try? fileManager.removeItem(at: thumbnailFileURL(for: item.id))
-        items.removeAll { $0.id == item.id }
-        try saveIndex()
+        try removePermanently([item])
     }
 
     func emptyTrash() throws {
-        for item in deletedItems {
+        try removePermanently(deletedItems)
+    }
+
+    func restoreAllTrash() throws {
+        var updated = items
+        for index in updated.indices { updated[index].deletedAt = nil }
+        try commit(updated, albums: albums)
+    }
+
+    private func removePermanently(_ removing: [VaultItem]) throws {
+        let ids = Set(removing.map(\.id))
+        guard removing.allSatisfy({ $0.deletedAt != nil }) else { throw ValidationError("请先移到最近删除。") }
+        // Persist the index first; a failed index write must never destroy referenced media.
+        try commit(items.filter { !ids.contains($0.id) }, albums: albums)
+        for item in removing {
             try? fileManager.removeItem(at: mediaFileURL(for: item.id))
             try? fileManager.removeItem(at: thumbnailFileURL(for: item.id))
         }
-        items.removeAll { $0.deletedAt != nil }
-        try saveIndex()
     }
 
     func createBackup(password: String) throws -> URL {
         guard password.count >= 8 else { throw ValidationError("备份密码至少需要 8 个字符。") }
+        guard items.reduce(Int64(0), { $0 + Int64($1.byteCount) }) <= 256 * 1_024 * 1_024 else {
+            throw ValidationError("本版单个备份最多支持 256 MB 媒体，请先分别导出大视频。")
+        }
         let payload = VaultBackupPayload(
             version: 1,
             createdAt: Date(),
             items: items,
             media: try Dictionary(uniqueKeysWithValues: items.map { item in
                 (item.id.uuidString, try data(for: item))
-            })
+            }),
+            albums: albums
         )
         try fileManager.createDirectory(at: exportURL, withIntermediateDirectories: true)
         let formatter = DateFormatter()
@@ -292,48 +366,63 @@ final class VaultStore: ObservableObject {
         let accessed = url.startAccessingSecurityScopedResource()
         defer { if accessed { url.stopAccessingSecurityScopedResource() } }
 
+        let fileSize = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
+        guard fileSize <= 512 * 1_024 * 1_024 else { throw ValidationError("备份文件过大，本版暂不支持恢复。") }
         let payload = try BackupCodec.decode(Data(contentsOf: url), password: password)
-
+        guard Set(payload.items.map(\.id)).count == payload.items.count else { throw AppSecurityError.invalidBackup }
+        // Validate every entry before touching any existing file, including duplicate IDs.
         for item in payload.items {
-            guard let original = payload.media[item.id.uuidString] else { throw AppSecurityError.invalidBackup }
-            try protectedWrite(try CryptoBox.seal(original, using: keyData), to: mediaFileURL(for: item.id))
-            if item.mediaKind == .photo,
-               let image = UIImage(data: original),
-               let thumbnail = thumbnailData(from: image) {
-                try protectedWrite(
-                    try CryptoBox.seal(thumbnail, using: keyData),
-                    to: thumbnailFileURL(for: item.id)
-                )
-            }
+            guard let original = payload.media[item.id.uuidString], !original.isEmpty,
+                  original.count == item.byteCount else { throw AppSecurityError.invalidBackup }
+            if item.mediaKind == .photo, UIImage(data: original) == nil { throw AppSecurityError.invalidBackup }
+            if let album = item.albumName { _ = try validAlbumName(album) }
         }
-        let incomingIDs = Set(payload.items.map(\.id))
-        items.removeAll { incomingIDs.contains($0.id) }
-        items.append(contentsOf: payload.items)
-        try saveIndex()
+        for album in payload.albums ?? [] { _ = try validAlbumName(album) }
+        let existingIDs = Set(items.map(\.id))
+        let incoming = payload.items.filter { !existingIDs.contains($0.id) }
+        var written: [UUID] = []
+        do {
+            for item in incoming {
+                let original = payload.media[item.id.uuidString]!
+                written.append(item.id)
+                try protectedWrite(try CryptoBox.seal(original, using: keyData), to: mediaFileURL(for: item.id))
+                if item.mediaKind == .photo, let image = UIImage(data: original), let thumbnail = thumbnailData(from: image) {
+                    try protectedWrite(try CryptoBox.seal(thumbnail, using: keyData), to: thumbnailFileURL(for: item.id))
+                } else if item.mediaKind == .video {
+                    try createVideoThumbnail(original, id: item.id, key: keyData)
+                }
+            }
+            try commit(items + incoming, albums: albums + (payload.albums ?? []) + incoming.compactMap(\.albumName))
+        } catch {
+            for id in written {
+                try? fileManager.removeItem(at: mediaFileURL(for: id))
+                try? fileManager.removeItem(at: thumbnailFileURL(for: id))
+            }
+            throw error
+        }
     }
 
     private func update(_ id: UUID, mutation: (inout VaultItem) -> Void) throws {
         guard let index = items.firstIndex(where: { $0.id == id }) else { return }
-        mutation(&items[index])
-        try saveIndex()
+        var updated = items
+        mutation(&updated[index])
+        try commit(updated, albums: albums)
     }
 
-    private func saveIndex() throws {
+    private func commit(_ updated: [VaultItem], albums updatedAlbums: [String]) throws {
         guard let keyData else { throw ValidationError("私人空间尚未解锁。") }
-        let plaintext = try JSONEncoder().encode(items)
+        let sortedAlbums = Array(Set(updatedAlbums)).sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+        let plaintext = try JSONEncoder().encode(VaultIndex(items: updated, albums: sortedAlbums))
         try protectedWrite(try CryptoBox.seal(plaintext, using: keyData), to: indexURL)
+        items = updated
+        albums = sortedAlbums
     }
 
     private func purgeExpiredTrash() throws {
         let cutoff = Date().addingTimeInterval(-30 * 24 * 60 * 60)
         let expired = items.filter { ($0.deletedAt ?? .distantFuture) < cutoff }
         guard !expired.isEmpty else { return }
-        for item in expired {
-            try? fileManager.removeItem(at: mediaFileURL(for: item.id))
-            try? fileManager.removeItem(at: thumbnailFileURL(for: item.id))
-        }
-        items.removeAll { item in expired.contains(where: { $0.id == item.id }) }
-        try saveIndex()
+        try removePermanently(expired)
     }
 
     private func prepareDirectories() throws {
@@ -367,6 +456,21 @@ final class VaultStore: ObservableObject {
         let renderer = UIGraphicsImageRenderer(size: size)
         return renderer.jpegData(withCompressionQuality: 0.82) { _ in
             image.draw(in: CGRect(origin: .zero, size: size))
+        }
+    }
+
+    private func createVideoThumbnail(_ data: Data, id: UUID, key: Data) throws {
+        let url = exportURL.appendingPathComponent("\(id.uuidString).mov")
+        try protectedWrite(data, to: url)
+        defer { try? fileManager.removeItem(at: url) }
+        let asset = AVURLAsset(url: url)
+        let generator = AVAssetImageGenerator(asset: asset)
+        generator.appliesPreferredTrackTransform = true
+        generator.maximumSize = CGSize(width: 512, height: 512)
+        // A missing preview does not invalidate a successfully copied video.
+        if let frame = try? generator.copyCGImage(at: .zero, actualTime: nil),
+           let thumbnail = UIImage(cgImage: frame).jpegData(compressionQuality: 0.82) {
+            try protectedWrite(try CryptoBox.seal(thumbnail, using: key), to: thumbnailFileURL(for: id))
         }
     }
 

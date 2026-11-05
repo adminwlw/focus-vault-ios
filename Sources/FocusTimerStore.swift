@@ -4,13 +4,11 @@ import UserNotifications
 @MainActor
 final class FocusTimerStore: ObservableObject {
     private let stateKey = "focus-timer-state-v1"
-    private let sessionsKey = "focus-sessions-v1"
     private let remindersKey = "focus-reminders-v1"
     private let nowProvider: () -> Date
     private var ticker: Timer?
 
     @Published private(set) var state = FocusTimerState()
-    @Published private(set) var sessions: [FocusSession] = []
     @Published private(set) var now: Date
     @Published private(set) var notificationsDenied = false
     @Published var remindersEnabled: Bool {
@@ -106,8 +104,6 @@ final class FocusTimerStore: ObservableObject {
     func endEarly() {
         guard state.phase == .running || state.phase == .paused else { return }
         now = nowProvider()
-        let focused = max(0, state.plannedSeconds - remainingSeconds)
-        appendSession(outcome: .endedEarly, focusedSeconds: focused)
         reset()
     }
 
@@ -126,30 +122,12 @@ final class FocusTimerStore: ObservableObject {
     func refresh() {
         now = nowProvider()
         if state.phase == .running, remainingSeconds == 0 {
-            appendSession(outcome: .completed, focusedSeconds: state.plannedSeconds)
             state.phase = .finished
             state.endDate = nil
             state.remainingWhenPaused = 0
             state.sessionID = nil
             save()
             updateTicker()
-        }
-    }
-
-    private func appendSession(outcome: FocusSession.Outcome, focusedSeconds: Int) {
-        let endedAt = nowProvider()
-        let startedAt = state.startedAt ?? endedAt.addingTimeInterval(-TimeInterval(focusedSeconds))
-        let session = FocusSession(
-            id: state.sessionID ?? UUID(),
-            taskName: state.taskName,
-            startedAt: startedAt,
-            endedAt: endedAt,
-            plannedSeconds: state.plannedSeconds,
-            focusedSeconds: focusedSeconds,
-            outcome: outcome
-        )
-        if !sessions.contains(where: { $0.id == session.id }) {
-            sessions.insert(session, at: 0)
         }
     }
 
@@ -168,16 +146,11 @@ final class FocusTimerStore: ObservableObject {
            let decoded = try? JSONDecoder().decode(FocusTimerState.self, from: data) {
             state = decoded
         }
-        if let data = defaults.data(forKey: sessionsKey),
-           let decoded = try? JSONDecoder().decode([FocusSession].self, from: data) {
-            sessions = decoded
-        }
     }
 
     private func save() {
         let defaults = UserDefaults.standard
         defaults.set(try? JSONEncoder().encode(state), forKey: stateKey)
-        defaults.set(try? JSONEncoder().encode(sessions), forKey: sessionsKey)
     }
 
     private func requestNotificationPermission() async -> Bool {

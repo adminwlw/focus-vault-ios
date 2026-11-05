@@ -41,6 +41,10 @@ struct FocusView: View {
             .navigationTitle("计时器")
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
+                    if focusedField == .duration {
+                        Button("确认") { startOrUnlock() }
+                            .accessibilityIdentifier("timer-confirm-input")
+                    }
                     Spacer()
                     Button("完成") { focusedField = nil }
                 }
@@ -52,7 +56,6 @@ struct FocusView: View {
             }
             .onChange(of: focusedField) { field in
                 if field == .duration,
-                   isEditable,
                    durationInput == String(lastValidMinutes) {
                     durationInput = ""
                 } else if field != .duration,
@@ -144,7 +147,6 @@ struct FocusView: View {
                 .submitLabel(.go)
                 .focused($focusedField, equals: .duration)
                 .frame(minWidth: 92, maxWidth: 180)
-                .disabled(!isEditable)
                 .onChange(of: durationInput) { newValue in
                     let digits = newValue.filter { $0 >= "0" && $0 <= "9" }
                     if digits != newValue { durationInput = digits }

@@ -37,8 +37,9 @@ enum SecureStore {
             kSecAttrService as String: service,
             kSecAttrAccount as String: account
         ]
-        SecItemDelete(query as CFDictionary)
-
+        let updated = SecItemUpdate(query as CFDictionary, [kSecValueData as String: data] as CFDictionary)
+        if updated == errSecSuccess { return }
+        guard updated == errSecItemNotFound else { throw AppSecurityError.keychain(updated) }
         var insert = query
         insert[kSecValueData as String] = data
         insert[kSecAttrAccessible as String] = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
@@ -162,6 +163,9 @@ enum BackupCodec {
         }
         guard envelope.format == "FocusVaultBackup" else { throw AppSecurityError.invalidBackup }
         guard envelope.version == 1 else { throw AppSecurityError.unsupportedBackup }
+        guard envelope.salt.count == 16, (1_000...1_000_000).contains(envelope.iterations) else {
+            throw AppSecurityError.invalidBackup
+        }
         let key = try CryptoBox.backupKey(
             password: password,
             salt: envelope.salt,
@@ -209,6 +213,7 @@ final class VaultAuthStore: ObservableObject {
     }
 
     func create(passcode: String, confirmation: String, hint: String) throws {
+        guard !hasVault else { throw ValidationError("私人空间已存在，请使用原口令解锁。") }
         guard passcode == confirmation else {
             throw ValidationError("两次输入的口令不一致。")
         }
@@ -226,15 +231,15 @@ final class VaultAuthStore: ObservableObject {
             iterations: iterations,
             digest: try CryptoBox.backupKey(password: passcode, salt: salt, iterations: iterations)
         )
-        try SecureStore.set(try JSONEncoder().encode(record), account: authAccount)
         try SecureStore.set(try CryptoBox.randomData(count: 32), account: keyAccount)
+        try SecureStore.set(try JSONEncoder().encode(record), account: authAccount)
         UserDefaults.standard.set(hint, forKey: hintKey)
         isUnlocked = true
         failedAttempts = 0
     }
 
     func verify(_ passcode: String, quietly: Bool = false) -> Bool {
-        guard quietly || Date() >= nextAllowedAttempt else { return false }
+        guard Date() >= nextAllowedAttempt else { return false }
         do {
             guard
                 let data = try SecureStore.get(account: authAccount),
@@ -252,16 +257,15 @@ final class VaultAuthStore: ObservableObject {
                 if record.iterations == nil { try upgradeLegacyPasscode(passcode) }
                 isUnlocked = true
                 failedAttempts = 0
+                nextAllowedAttempt = .distantPast
                 lastError = nil
                 return true
             }
 
-            if !quietly {
-                failedAttempts += 1
-                if failedAttempts >= 5 {
-                    let delay = min(pow(2.0, Double(failedAttempts - 5)), 30)
-                    nextAllowedAttempt = Date().addingTimeInterval(delay)
-                }
+            failedAttempts += 1
+            if failedAttempts >= 5 {
+                let delay = min(pow(2.0, Double(min(failedAttempts - 5, 5))), 30)
+                nextAllowedAttempt = Date().addingTimeInterval(delay)
             }
             if !quietly { lastError = "口令不正确。" }
             return false

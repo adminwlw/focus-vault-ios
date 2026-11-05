@@ -36,6 +36,20 @@ final class FocusVaultUITests: XCTestCase {
         app.toolbars.buttons["完成"].tap()
         keepScreenshot("02-manual-timer-portrait")
 
+        XCTAssertFalse(app.tabBars.buttons["记录"].exists)
+        app.tabBars.buttons["秒表"].tap()
+        let watch = app.buttons["stopwatch-start-pause"]
+        XCTAssertTrue(watch.waitForExistence(timeout: 3))
+        watch.tap()
+        XCTAssertEqual(watch.label, "暂停")
+        app.buttons["stopwatch-lap-reset"].tap()
+        XCTAssertTrue(app.staticTexts["第 1 次"].exists)
+        watch.tap()
+        keepScreenshot("03-stopwatch-lap")
+        app.buttons["stopwatch-lap-reset"].tap()
+        XCTAssertFalse(app.staticTexts["第 1 次"].exists)
+        app.tabBars.buttons["计时"].tap()
+
         XCUIDevice.shared.orientation = .landscapeLeft
         XCTAssertTrue(timerTitle.waitForExistence(timeout: 3))
         XCTAssertTrue(duration.exists)
@@ -62,6 +76,47 @@ final class FocusVaultUITests: XCTestCase {
         XCTAssertTrue(vaultTitle.waitForExistence(timeout: 5))
         assertContained(vaultTitle, in: app)
         keepScreenshot("04-private-vault-empty")
+
+        app.buttons["vault-albums"].tap()
+        app.buttons["albums-create"].tap()
+        let albumName = app.alerts.textFields.firstMatch
+        XCTAssertTrue(albumName.waitForExistence(timeout: 3))
+        albumName.typeText("生活")
+        app.alerts.buttons["保存"].tap()
+        XCTAssertTrue(app.buttons["生活"].waitForExistence(timeout: 3))
+        keepScreenshot("05-empty-album-created")
+        app.buttons["生活"].tap()
+        XCTAssertTrue(app.navigationBars["生活"].waitForExistence(timeout: 3))
+        keepScreenshot("06-album-import-entry")
+        let window = app.windows.firstMatch
+        window.coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.65))
+            .press(forDuration: 0.05, thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.65)))
+        XCTAssertTrue(timerTitle.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.navigationBars["生活"].exists)
+
+        replaceText(in: duration, with: passcode)
+        app.buttons["timer-start"].tap()
+        XCTAssertTrue(vaultTitle.waitForExistence(timeout: 5))
+        app.buttons["vault-albums"].tap()
+        XCTAssertTrue(app.buttons["生活"].waitForExistence(timeout: 3))
+        app.buttons["生活"].swipeLeft()
+        app.buttons["重命名"].tap()
+        let rename = app.alerts.textFields.firstMatch
+        replaceText(in: rename, with: "旅行")
+        app.alerts.buttons["保存"].tap()
+        XCTAssertTrue(app.buttons["旅行"].waitForExistence(timeout: 3))
+        app.buttons["旅行"].tap()
+        app.buttons["vault-import"].tap()
+        let pickerCancel = app.buttons["Cancel"].exists ? app.buttons["Cancel"] : app.buttons["取消"]
+        XCTAssertTrue(pickerCancel.waitForExistence(timeout: 5))
+        keepScreenshot("07-system-photo-picker")
+        pickerCancel.tap()
+        XCTAssertTrue(app.navigationBars["旅行"].waitForExistence(timeout: 5))
+        XCUIDevice.shared.press(.home)
+        app.activate()
+        XCTAssertTrue(timerTitle.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.navigationBars["旅行"].exists)
+        keepScreenshot("08-background-locked")
     }
 
     private func replaceText(in field: XCUIElement, with value: String) {
