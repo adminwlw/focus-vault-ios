@@ -46,27 +46,27 @@ final class VaultStore: ObservableObject {
     func unlock(using key: Data) throws {
         lock()
         do {
-        sessionID = UUID()
-        keyData = key
-        try prepareDirectories()
-        if fileManager.fileExists(atPath: indexURL.path) {
-            let encrypted = try Data(contentsOf: indexURL)
-            let plaintext = try CryptoBox.open(encrypted, using: key)
-            if let index = try? JSONDecoder().decode(VaultIndex.self, from: plaintext) {
-                guard index.version == 2 else { throw ValidationError("相册数据版本暂不受支持。") }
-                items = index.items
-                albums = index.albums
+            sessionID = UUID()
+            keyData = key
+            try prepareDirectories()
+            if fileManager.fileExists(atPath: indexURL.path) {
+                let encrypted = try Data(contentsOf: indexURL)
+                let plaintext = try CryptoBox.open(encrypted, using: key)
+                if let index = try? JSONDecoder().decode(VaultIndex.self, from: plaintext) {
+                    guard index.version == 2 else { throw ValidationError("相册数据版本暂不受支持。") }
+                    items = index.items
+                    albums = index.albums
+                } else {
+                    items = try JSONDecoder().decode([VaultItem].self, from: plaintext)
+                    albums = Array(Set(items.compactMap(\.albumName))).sorted()
+                }
             } else {
-                items = try JSONDecoder().decode([VaultItem].self, from: plaintext)
-                albums = Array(Set(items.compactMap(\.albumName))).sorted()
+                items = []
+                albums = []
             }
-        } else {
-            items = []
-            albums = []
-        }
-        try purgeExpiredTrash()
-        try cleanupOrphanedMedia()
-        isLoaded = true
+            try purgeExpiredTrash()
+            try cleanupOrphanedMedia()
+            isLoaded = true
         } catch {
             lock()
             throw error

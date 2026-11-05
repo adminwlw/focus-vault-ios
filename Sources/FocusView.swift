@@ -278,6 +278,10 @@ struct FocusView: View {
             onVaultUnlocked()
             return
         }
+        guard isEditable else {
+            durationInput = String(lastValidMinutes)
+            return
+        }
 
         if let minutes = Int(input), (1...1_440).contains(minutes) {
             lastValidMinutes = minutes

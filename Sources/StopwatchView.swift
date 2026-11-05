@@ -37,7 +37,7 @@ final class StopwatchStore: ObservableObject {
     }
 
     func lap() {
-        guard state.startedAt != nil, state.laps.count < 500 else { return }
+        guard state.startedAt != nil else { return }
         state.laps.append(state.elapsed(at: now()))
         save()
     }

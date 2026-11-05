@@ -133,6 +133,14 @@ final class FocusVaultUITests: XCTestCase {
         XCTAssertTrue(vaultTitle.waitForExistence(timeout: 5))
         app.buttons["vault-lock"].tap()
         XCTAssertTrue(app.staticTexts["计时中"].waitForExistence(timeout: 3))
+        app.buttons["结束"].tap()
+        app.terminate()
+        app.launchArguments += ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL", "-AppleInterfaceStyle", "Dark"]
+        app.launch()
+        XCTAssertTrue(timerTitle.waitForExistence(timeout: 5))
+        app.swipeUp()
+        XCTAssertTrue(app.buttons["timer-start"].exists)
+        keepScreenshot("10-dark-large-text-timer")
     }
 
     private func replaceText(in field: XCUIElement, with value: String) {
