@@ -120,7 +120,7 @@ final class FocusVaultUITests: XCTestCase {
         let pickerPhoto = app.images.matching(identifier: "PXGGridLayout-Info").firstMatch
         XCTAssertTrue(pickerPhoto.waitForExistence(timeout: 20))
         keepScreenshot("08-system-photo-picker")
-        pickerPhoto.tap()
+        pickerPhoto.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
         let addPhoto = app.navigationBars["Photos"].buttons["Done"]
         XCTAssertTrue(addPhoto.waitForExistence(timeout: 5))
         addPhoto.tap()
