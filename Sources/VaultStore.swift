@@ -75,6 +75,7 @@ final class VaultStore: ObservableObject {
 
     func lock() {
         sessionID = UUID()
+        isBusy = false
         items = []
         albums = []
         keyData = nil
@@ -87,7 +88,7 @@ final class VaultStore: ObservableObject {
         guard !selections.isEmpty, isLoaded, !isBusy else { return [] }
         let importSession = sessionID
         isBusy = true
-        defer { isBusy = false }
+        defer { if sessionID == importSession { isBusy = false } }
         var failures = 0
         var importedAssetIdentifiers: [String] = []
 
