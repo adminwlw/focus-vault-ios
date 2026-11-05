@@ -58,10 +58,15 @@ jobs:
         continue-on-error: true
         run: |
           set -o pipefail
+          xcrun simctl boot 'iPhone SE (3rd generation)' || true
+          xcrun simctl bootstatus 'iPhone SE (3rd generation)' -b
+          xcrun simctl ui 'iPhone SE (3rd generation)' appearance light
+          xcrun simctl addmedia 'iPhone SE (3rd generation)' Resources/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png
           xcodebuild test \
             -project FocusVault.xcodeproj \
             -scheme FocusVault \
             -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation),OS=latest' \
+            -parallel-testing-enabled NO \
             -only-testing:FocusVaultUITests \
             -resultBundlePath build/UITest-SE.xcresult 2>&1 | tee build/ui-tests-se.log
 
@@ -70,10 +75,15 @@ jobs:
         continue-on-error: true
         run: |
           set -o pipefail
+          xcrun simctl boot 'iPhone 16 Pro Max' || true
+          xcrun simctl bootstatus 'iPhone 16 Pro Max' -b
+          xcrun simctl ui 'iPhone 16 Pro Max' appearance dark
+          xcrun simctl addmedia 'iPhone 16 Pro Max' Resources/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png
           xcodebuild test \
             -project FocusVault.xcodeproj \
             -scheme FocusVault \
             -destination 'platform=iOS Simulator,name=iPhone 16 Pro Max,OS=latest' \
+            -parallel-testing-enabled NO \
             -only-testing:FocusVaultUITests \
             -resultBundlePath build/UITest-ProMax.xcresult 2>&1 | tee build/ui-tests-promax.log
 

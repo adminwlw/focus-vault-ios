@@ -12,6 +12,7 @@ private enum VaultSortOrder: String, CaseIterable, Identifiable {
 struct VaultView: View {
     @EnvironmentObject private var store: VaultStore
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @ScaledMetric(relativeTo: .body) private var filterBarHeight: CGFloat = 56
     @State private var pickerItems: [PhotosPickerItem] = []
     @State private var showPhotoPicker = false
     @State private var selectedAlbum: String?
@@ -246,6 +247,7 @@ struct VaultView: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
         }
+        .frame(height: filterBarHeight)
     }
 
     @ViewBuilder

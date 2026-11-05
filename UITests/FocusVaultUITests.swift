@@ -117,14 +117,28 @@ final class FocusVaultUITests: XCTestCase {
         app.buttons["vault-import"].tap()
         let pickerCancel = app.buttons["Cancel"].exists ? app.buttons["Cancel"] : app.buttons["取消"]
         XCTAssertTrue(pickerCancel.waitForExistence(timeout: 5))
+        let photoCollection = app.collectionViews.firstMatch
+        XCTAssertTrue(photoCollection.waitForExistence(timeout: 20))
+        XCTAssertTrue(photoCollection.cells.firstMatch.waitForExistence(timeout: 10))
         keepScreenshot("08-system-photo-picker")
-        pickerCancel.tap()
+        photoCollection.cells.firstMatch.tap()
+        let addPhoto = app.buttons["添加"].exists ? app.buttons["添加"] : app.buttons["Add"]
+        XCTAssertTrue(addPhoto.waitForExistence(timeout: 5))
+        addPhoto.tap()
         XCTAssertTrue(app.navigationBars["旅行"].waitForExistence(timeout: 5))
+        if app.buttons["保留系统原件"].waitForExistence(timeout: 10) {
+            keepScreenshot("09-import-original-choice")
+            app.buttons["保留系统原件"].tap()
+        } else if app.alerts.buttons["好"].exists {
+            app.alerts.buttons["好"].tap()
+        }
+        XCTAssertTrue(app.buttons.matching(identifier: "vault-media-link").firstMatch.waitForExistence(timeout: 5))
+        keepScreenshot("10-imported-into-album")
         XCUIDevice.shared.press(.home)
         app.activate()
         XCTAssertTrue(timerTitle.waitForExistence(timeout: 5))
         XCTAssertFalse(app.navigationBars["旅行"].exists)
-        keepScreenshot("09-background-locked")
+        keepScreenshot("11-background-locked")
         replaceText(in: duration, with: "1")
         app.buttons["timer-start"].tap()
         XCTAssertTrue(app.staticTexts["计时中"].waitForExistence(timeout: 3))
@@ -135,12 +149,12 @@ final class FocusVaultUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["计时中"].waitForExistence(timeout: 3))
         app.buttons["结束"].tap()
         app.terminate()
-        app.launchArguments += ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL", "-AppleInterfaceStyle", "Dark"]
+        app.launchArguments += ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
         app.launch()
         XCTAssertTrue(timerTitle.waitForExistence(timeout: 5))
         app.swipeUp()
         XCTAssertTrue(app.buttons["timer-start"].exists)
-        keepScreenshot("10-dark-large-text-timer")
+        keepScreenshot("12-large-text-timer")
     }
 
     private func replaceText(in field: XCUIElement, with value: String) {
