@@ -111,9 +111,6 @@ jobs:
           path: |
             build/FocusVault-0.2.0-unsigned.ipa
             build/FocusVault-0.2.0-unsigned.ipa.sha256
-            build/TestResults.xcresult
-            build/UITest-SE.xcresult
-            build/UITest-ProMax.xcresult
             build/ui-screens
             build/*.log
           if-no-files-found: error

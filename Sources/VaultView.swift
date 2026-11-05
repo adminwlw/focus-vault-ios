@@ -558,6 +558,7 @@ private struct VaultAlbumsView: View {
                                     .foregroundStyle(.secondary)
                             }
                         }
+                        .accessibilityIdentifier("album-\(album)")
                         .swipeActions {
                             Button("删除相册", role: .destructive) { deletingAlbum = album }
                             Button("重命名") { editingAlbum = album; name = album; showEditor = true }
