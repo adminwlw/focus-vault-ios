@@ -27,17 +27,27 @@ struct PickedVaultFile: Transferable {
     }
 
     private static func copy(_ source: URL) throws -> Self {
+        try Task.checkCancellation()
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("VaultImport-" + UUID().uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true,
                                                attributes: [.protectionKey: FileProtectionType.complete])
         let destination = directory.appendingPathComponent(source.lastPathComponent)
         do {
             try FileManager.default.copyItem(at: source, to: destination)
+            try Task.checkCancellation()
             try FileManager.default.setAttributes([.protectionKey: FileProtectionType.complete], ofItemAtPath: destination.path)
             return Self(url: destination)
         } catch {
             try? FileManager.default.removeItem(at: directory)
             throw error
+        }
+    }
+
+    static func cleanupInterruptedCopies() {
+        let manager = FileManager.default
+        guard let entries = try? manager.contentsOfDirectory(at: manager.temporaryDirectory, includingPropertiesForKeys: nil) else { return }
+        for entry in entries where entry.lastPathComponent.hasPrefix("VaultImport-") {
+            try? manager.removeItem(at: entry)
         }
     }
 }
@@ -85,6 +95,7 @@ enum VaultMediaFile {
             guard asset.isPlayable else { throw ValidationError("视频无法播放，原件已保留。") }
             let seconds = CMTimeGetSeconds(asset.duration)
             if seconds.isFinite, seconds > 0, seconds < Double(Int.max) { duration = seconds }
+            capturedAt = asset.creationDate?.dateValue
             let generator = AVAssetImageGenerator(asset: asset)
             generator.appliesPreferredTrackTransform = true
             generator.maximumSize = CGSize(width: 512, height: 512)
@@ -134,19 +145,19 @@ enum VaultMediaFile {
         try output.close()
         // Validate every authentication tag and the complete length before making the file visible.
         let expected = hex(hash.finalize())
-        guard try decryptedDigest(staging, key: key) == expected else { throw AppSecurityError.invalidCiphertext }
+        guard try decryptedDigest(staging, key: key, requireChunked: true) == expected else { throw AppSecurityError.invalidCiphertext }
         try FileManager.default.moveItem(at: staging, to: destination)
         return expected
     }
 
     @discardableResult
-    static func decrypt(_ source: URL, to destination: URL, key: Data) throws -> String {
+    static func decrypt(_ source: URL, to destination: URL, key: Data, requireChunked: Bool = false) throws -> String {
         let staging = destination.appendingPathExtension(UUID().uuidString + ".partial")
         defer { try? FileManager.default.removeItem(at: staging) }
         try Data().write(to: staging, options: .completeFileProtection)
         let output = try FileHandle(forWritingTo: staging)
         do {
-            let hash = try read(source, key: key) { try output.write(contentsOf: $0) }
+            let hash = try read(source, key: key, requireChunked: requireChunked) { try output.write(contentsOf: $0) }
             try output.close()
             try FileManager.default.moveItem(at: staging, to: destination)
             return hash
@@ -156,22 +167,23 @@ enum VaultMediaFile {
         }
     }
 
-    static func data(_ source: URL, key: Data) throws -> Data {
+    static func data(_ source: URL, key: Data, requireChunked: Bool = false) throws -> Data {
         var result = Data()
-        _ = try read(source, key: key) { result.append($0) }
+        _ = try read(source, key: key, requireChunked: requireChunked) { result.append($0) }
         return result
     }
 
-    static func decryptedDigest(_ source: URL, key: Data) throws -> String {
-        try read(source, key: key) { _ in }
+    static func decryptedDigest(_ source: URL, key: Data, requireChunked: Bool = false) throws -> String {
+        try read(source, key: key, requireChunked: requireChunked) { _ in }
     }
 
-    private static func read(_ source: URL, key: Data, consume: (Data) throws -> Void) throws -> String {
+    private static func read(_ source: URL, key: Data, requireChunked: Bool, consume: (Data) throws -> Void) throws -> String {
         try Task.checkCancellation()
         let input = try FileHandle(forReadingFrom: source)
         defer { try? input.close() }
         let prefix = try input.read(upToCount: magic.count) ?? Data()
         guard prefix == magic else {
+            guard !requireChunked else { throw AppSecurityError.invalidCiphertext }
             let plaintext = try CryptoBox.open(Data(contentsOf: source), using: key)
             try consume(plaintext)
             return hex(SHA256.hash(data: plaintext))

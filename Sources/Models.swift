@@ -55,6 +55,7 @@ struct VaultItem: Codable, Identifiable, Hashable, Sendable {
     var originalState: OriginalState? = nil
     var originalCheckedAt: Date? = nil
     var videoDuration: Double? = nil
+    var isChunked: Bool? = nil
 
     var title: String { displayName?.isEmpty == false ? displayName! : originalName }
     var originalStatus: String {

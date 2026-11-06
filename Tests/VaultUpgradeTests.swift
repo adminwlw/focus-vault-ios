@@ -24,6 +24,7 @@ final class VaultUpgradeTests: XCTestCase {
         try bytes.write(to: source)
         let first = try await store.importFile(source, kind: .photo, album: "生活", sourceIdentifier: "source-photo")
         XCTAssertFalse(first.duplicate)
+        XCTAssertEqual(store.items[0].isChunked, true)
         try store.editMetadata(first.id, name: "周末", note: "海边散步")
         try store.moveToTrash(store.items[0])
         let again = try await store.importFile(source, kind: .photo, album: "家人", sourceIdentifier: "source-photo")
@@ -62,6 +63,30 @@ final class VaultUpgradeTests: XCTestCase {
         XCTAssertTrue(result.duplicate)
         XCTAssertEqual(store.items.count, 1)
         XCTAssertNotNil(store.items[0].contentDigest)
+    }
+
+    func testExistingBackupCanRestoreNewFileFormatWithoutReusingSystemIdentifiers() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let store = VaultStore(directory: root.appendingPathComponent("first"))
+        try store.unlock(using: CryptoBox.randomData(count: 32))
+        defer { store.lock(); try? FileManager.default.removeItem(at: root) }
+        let source = root.appendingPathComponent("original.png")
+        let bytes = photo()
+        try bytes.write(to: source)
+        _ = try await store.importFile(source, kind: .photo, sourceIdentifier: "first-device-source")
+        let backup = try store.createBackup(password: "existing-backup-password")
+        let saved = root.appendingPathComponent("saved.focusvault")
+        try Data(contentsOf: backup).write(to: saved)
+        let second = VaultStore(directory: root.appendingPathComponent("second"))
+        try second.unlock(using: CryptoBox.randomData(count: 32))
+        defer { second.lock() }
+        try second.restoreBackup(from: saved, password: "existing-backup-password")
+        let item = try XCTUnwrap(second.items.first)
+        XCTAssertNil(item.isChunked)
+        XCTAssertNil(item.sourceIdentifier)
+        XCTAssertEqual(item.originalState, .unknown)
+        XCTAssertEqual(try second.data(for: item), bytes)
     }
 
     func testFailedFileCommitRemovesStagedMedia() async throws {
@@ -143,12 +168,16 @@ final class VaultUpgradeTests: XCTestCase {
         changedHeader[16] ^= 1
         try changedHeader.write(to: encrypted)
         XCTAssertThrowsError(try VaultMediaFile.decryptedDigest(encrypted, key: key))
+        var changedMagic = valid
+        changedMagic[0] ^= 1
+        try changedMagic.write(to: encrypted)
+        XCTAssertThrowsError(try VaultMediaFile.decryptedDigest(encrypted, key: key, requireChunked: true))
         let output = root.appendingPathComponent("output.bin")
         XCTAssertThrowsError(try VaultMediaFile.decrypt(encrypted, to: output, key: key))
         XCTAssertFalse(FileManager.default.fileExists(atPath: output.path))
     }
 
-    func testOneGiBFileRoundTripWithoutWholeFileBuffers() throws {
+    func testOneGiBFileRoundTripWithoutWholeFileBuffers() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
@@ -161,10 +190,14 @@ final class VaultUpgradeTests: XCTestCase {
         let key = try CryptoBox.randomData(count: 32)
         let encrypted = root.appendingPathComponent("encrypted.vault")
         let restored = root.appendingPathComponent("restored.bin")
-        let fingerprint = try VaultMediaFile.encrypt(source, to: encrypted, key: key)
-        try VaultMediaFile.decrypt(encrypted, to: restored, key: key)
+        let fingerprint = try await VaultMediaFile.run {
+            let hash = try VaultMediaFile.encrypt(source, to: encrypted, key: key)
+            try VaultMediaFile.decrypt(encrypted, to: restored, key: key)
+            return hash
+        }
+        let restoredDigest = try await VaultMediaFile.run { try VaultMediaFile.digest(restored) }
         XCTAssertEqual(try restored.resourceValues(forKeys: [.fileSizeKey]).fileSize, 1_073_741_824)
-        XCTAssertEqual(try VaultMediaFile.digest(restored), fingerprint)
+        XCTAssertEqual(restoredDigest, fingerprint)
     }
 
     func testCancelledFileOperationDoesNotPublishOutput() async throws {

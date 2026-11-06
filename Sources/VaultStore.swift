@@ -39,6 +39,7 @@ final class VaultStore: ObservableObject {
         indexURL = rootURL.appendingPathComponent("index.vault")
         exportURL = fileManager.temporaryDirectory.appendingPathComponent("FocusVaultExports", isDirectory: true)
         try? fileManager.removeItem(at: exportURL)
+        PickedVaultFile.cleanupInterruptedCopies()
     }
 
     var activeItems: [VaultItem] {
@@ -88,6 +89,7 @@ final class VaultStore: ObservableObject {
         importTask = nil
         importProgress = nil
         failedSelections = []
+        lastImportAlbum = nil
         retryCount = 0
         sessionID = UUID()
         isBusy = false
@@ -170,7 +172,9 @@ final class VaultStore: ObservableObject {
         let album = try album.map { try validAlbumName($0) }
         let session = sessionID
         let sourceSize = try source.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
-        let available = try rootURL.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]).volumeAvailableCapacityForImportantUsage
+        let capacity = try? rootURL.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
+        let disk = try? fileManager.attributesOfFileSystem(forPath: rootURL.path)
+        let available = capacity?.volumeAvailableCapacityForImportantUsage ?? (disk?[.systemFreeSize] as? NSNumber)?.int64Value
         if let available, Int64(sourceSize) > max(0, (available - 64 * 1_024 * 1_024) / 2) {
             throw ValidationError("储存空间不足，原件已保留。请释放空间后重试。")
         }
@@ -181,7 +185,7 @@ final class VaultStore: ObservableObject {
             if let known = candidate.contentDigest, known != info.digest { continue }
             let file = mediaFileURL(for: candidate.id)
             let hash: String
-            do { hash = try await VaultMediaFile.run { try VaultMediaFile.decryptedDigest(file, key: keyData) } }
+            do { hash = try await VaultMediaFile.run { try VaultMediaFile.decryptedDigest(file, key: keyData, requireChunked: candidate.isChunked == true) } }
             catch is CancellationError { throw CancellationError() }
             catch { continue }
             guard sessionID == session, isLoaded else { throw CancellationError() }
@@ -206,7 +210,7 @@ final class VaultStore: ObservableObject {
                              byteCount: info.size, albumName: album, isFavorite: false, deletedAt: nil,
                              contentDigest: info.digest, sourceIdentifier: sourceIdentifier,
                              originalState: sourceIdentifier == nil ? .unknown : .kept,
-                             originalCheckedAt: Date(), videoDuration: info.duration)
+                             originalCheckedAt: Date(), videoDuration: info.duration, isChunked: true)
         let destination = mediaFileURL(for: item.id)
         do {
             let writtenDigest = try await VaultMediaFile.run { try VaultMediaFile.encrypt(source, to: destination, key: keyData) }
@@ -271,7 +275,7 @@ final class VaultStore: ObservableObject {
         guard let keyData else { throw ValidationError("请先解锁私人空间。") }
         for item in targets {
             let file = mediaFileURL(for: item.id)
-            let hash = try await VaultMediaFile.run { try VaultMediaFile.decryptedDigest(file, key: keyData) }
+            let hash = try await VaultMediaFile.run { try VaultMediaFile.decryptedDigest(file, key: keyData, requireChunked: item.isChunked == true) }
             if let expected = item.contentDigest, expected != hash { throw AppSecurityError.invalidCiphertext }
         }
         guard sessionID == session, isLoaded else { throw CancellationError() }
@@ -376,7 +380,7 @@ final class VaultStore: ObservableObject {
 
     func data(for item: VaultItem) throws -> Data {
         guard let keyData else { throw ValidationError("私人空间尚未解锁。") }
-        let data = try VaultMediaFile.data(mediaFileURL(for: item.id), key: keyData)
+        let data = try VaultMediaFile.data(mediaFileURL(for: item.id), key: keyData, requireChunked: item.isChunked == true)
         if let expected = item.contentDigest {
             guard SHA256.hash(data: data).map({ String(format: "%02x", $0) }).joined() == expected else { throw AppSecurityError.invalidCiphertext }
         }
@@ -398,7 +402,7 @@ final class VaultStore: ObservableObject {
         try fileManager.createDirectory(at: exportURL, withIntermediateDirectories: true)
         let safeName = URL(fileURLWithPath: item.originalName).lastPathComponent
         let url = exportURL.appendingPathComponent("\(item.id.uuidString)-\(safeName)")
-        if !fileManager.fileExists(atPath: url.path) { try VaultMediaFile.decrypt(mediaFileURL(for: item.id), to: url, key: keyData) }
+        if !fileManager.fileExists(atPath: url.path) { try VaultMediaFile.decrypt(mediaFileURL(for: item.id), to: url, key: keyData, requireChunked: item.isChunked == true) }
         return url
     }
 
@@ -417,7 +421,7 @@ final class VaultStore: ObservableObject {
                 let base = URL(fileURLWithPath: item.title).deletingPathExtension().lastPathComponent
                 let name = String(base.prefix(80)) + "-" + String(item.id.uuidString.prefix(8))
                 let output = folder.appendingPathComponent(name).appendingPathExtension(originalExtension)
-                let hash = try await VaultMediaFile.run { try VaultMediaFile.decrypt(source, to: output, key: keyData) }
+                let hash = try await VaultMediaFile.run { try VaultMediaFile.decrypt(source, to: output, key: keyData, requireChunked: item.isChunked == true) }
                 if let expected = item.contentDigest, expected != hash { throw AppSecurityError.invalidCiphertext }
                 guard sessionID == session, isLoaded else { throw CancellationError() }
                 urls.append(output)
@@ -542,7 +546,7 @@ final class VaultStore: ObservableObject {
         let retained = Set(items.map { $0.id.uuidString + ".vault" })
         for directory in [mediaURL, thumbnailURL] {
             for url in try fileManager.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
-                where url.pathExtension == "vault" && !retained.contains(url.lastPathComponent) {
+                where url.pathExtension == "partial" || (url.pathExtension == "vault" && !retained.contains(url.lastPathComponent)) {
                 try fileManager.removeItem(at: url)
             }
         }
@@ -594,6 +598,7 @@ final class VaultStore: ObservableObject {
             restored.sourceIdentifier = nil
             restored.originalState = .unknown
             restored.originalCheckedAt = nil
+            restored.isChunked = nil
             return restored
         }
         var written: [UUID] = []

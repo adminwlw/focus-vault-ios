@@ -220,6 +220,7 @@ final class FocusVaultUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["没有符合条件的项目"].waitForExistence(timeout: 3))
         keepScreenshot("17-filter-no-results")
         app.buttons["清除"].tap()
+        if app.buttons["取消"].exists { app.buttons["取消"].tap() }
         let photo = app.buttons.matching(identifier: "vault-media-link")
             .matching(NSPredicate(format: "label CONTAINS %@", "UI测试照片2")).firstMatch
         XCTAssertTrue(photo.waitForExistence(timeout: 3))
