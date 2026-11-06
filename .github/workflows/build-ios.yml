@@ -71,6 +71,7 @@ jobs:
           xcrun simctl boot 'iPhone SE (3rd generation)' || true
           xcrun simctl bootstatus 'iPhone SE (3rd generation)' -b
           xcrun simctl addmedia 'iPhone SE (3rd generation)' Resources/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png
+          result=0
           for appearance in light dark; do
           xcrun simctl ui 'iPhone SE (3rd generation)' appearance "$appearance"
           xcodebuild test \
@@ -79,8 +80,9 @@ jobs:
             -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation),OS=latest' \
             -parallel-testing-enabled NO \
             -only-testing:FocusVaultUITests \
-            -resultBundlePath "build/UITest-se-$appearance.xcresult" 2>&1 | tee "build/ui-tests-se-$appearance.log"
+            -resultBundlePath "build/UITest-se-$appearance.xcresult" 2>&1 | tee "build/ui-tests-se-$appearance.log" || result=1
           done
+          exit "$result"
 
       - name: Upload small-screen test log
         if: always()
@@ -99,6 +101,7 @@ jobs:
           xcrun simctl boot 'iPhone 16 Pro Max' || true
           xcrun simctl bootstatus 'iPhone 16 Pro Max' -b
           xcrun simctl addmedia 'iPhone 16 Pro Max' Resources/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png
+          result=0
           for appearance in light dark; do
           xcrun simctl ui 'iPhone 16 Pro Max' appearance "$appearance"
           xcodebuild test \
@@ -107,8 +110,9 @@ jobs:
             -destination 'platform=iOS Simulator,name=iPhone 16 Pro Max,OS=latest' \
             -parallel-testing-enabled NO \
             -only-testing:FocusVaultUITests \
-            -resultBundlePath "build/UITest-promax-$appearance.xcresult" 2>&1 | tee "build/ui-tests-promax-$appearance.log"
+            -resultBundlePath "build/UITest-promax-$appearance.xcresult" 2>&1 | tee "build/ui-tests-promax-$appearance.log" || result=1
           done
+          exit "$result"
 
       - name: Export UI test screenshots
         if: always()

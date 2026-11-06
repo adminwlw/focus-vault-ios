@@ -124,7 +124,7 @@ final class FocusVaultUITests: XCTestCase {
         XCTAssertTrue(app.buttons["album-旅行"].waitForExistence(timeout: 3))
         app.buttons["album-旅行"].tap()
         app.buttons["vault-import"].tap()
-        let pickerCancel = app.buttons["Cancel"].exists ? app.buttons["Cancel"] : app.buttons["取消"]
+        let pickerCancel = app.buttons.matching(NSPredicate(format: "label IN %@", ["Cancel", "取消"])).firstMatch
         XCTAssertTrue(pickerCancel.waitForExistence(timeout: 5))
         let pickerPhoto = app.images.matching(identifier: "PXGGridLayout-Info").firstMatch
         XCTAssertTrue(pickerPhoto.waitForExistence(timeout: 20))
@@ -264,7 +264,8 @@ final class FocusVaultUITests: XCTestCase {
         app.buttons["全选"].tap()
         app.buttons["导出"].tap()
         app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "导出 ")).firstMatch.tap()
-        XCTAssertTrue(app.otherElements["vault-share-sheet"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.otherElements["ActivityListView"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["header.closeButton"].exists)
         keepScreenshot("21-batch-export-share")
     }
 
