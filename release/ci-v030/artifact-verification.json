@@ -1,0 +1,43 @@
+{
+  "version": "0.3.0",
+  "build": "4",
+  "run_id": "42177577220",
+  "source_commit": "441fbc68bad757de7778da9d089b5ffa95751d8a",
+  "packaging_source_commit": "0cf5a28c4a69229f343016b7552c9ae83c180f42",
+  "ci_ipa_sha256": "f4c46a95a939c3299dd5c8b11ba1aa66f18374072ea71454f9dc4615d4369e1c",
+  "resource_updates": [
+    {
+      "path": "Payload/FocusVault.app/PrivacyInfo.xcprivacy",
+      "sha256": "0adc5eb558e3e641edb9973cbbf0217e2bea6491c7ecd9ad60eebabdc7cbd9f4"
+    }
+  ],
+  "other_zip_entry_contents_identical": true,
+  "executable_sha256": "9b572de0fc9738c5d059b948d0fb5f50ace1c1653d8028016c51ce08c1360d69",
+  "ipa": "FocusVault-0.3.0-unsigned.ipa",
+  "ipa_bytes": 972917,
+  "sha256": "a5b3829068fdaf1dd7bb3be9e676dcb9c782b7f5248c1272b65b438767901773",
+  "bundle_id": "com.sim360.focusvault",
+  "minimum_ios": "16.0",
+  "device_family": [
+    1
+  ],
+  "compiled_icons": [
+    "AppIcon60x60@2x.png",
+    "AppIcon76x76@2x~ipad.png"
+  ],
+  "face_id_usage_description": "仅在你主动使用快捷认证时，验证身份以进入私人空间。",
+  "photo_add_usage_description": "仅在你主动导出并选择保存到系统照片时，添加照片或视频副本。",
+  "assets_present": true,
+  "privacy_manifest_parsed": true,
+  "debug_fixture_entries_present": false,
+  "code_signature_present": false,
+  "provisioning_profile_present": false,
+  "unit_tests": 27,
+  "ui_tests_per_configuration": 2,
+  "screenshots": {
+    "se-light": 24,
+    "se-dark": 24,
+    "promax-light": 24,
+    "promax-dark": 24
+  }
+}
