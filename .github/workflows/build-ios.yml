@@ -134,6 +134,7 @@ jobs:
           /usr/libexec/PlistBuddy -c 'Print :UILaunchScreen' "$APP_PATH/Info.plist" >/dev/null
           /usr/libexec/PlistBuddy -c 'Print :NSCameraUsageDescription' "$APP_PATH/Info.plist" >/dev/null
           /usr/libexec/PlistBuddy -c 'Print :NSPhotoLibraryUsageDescription' "$APP_PATH/Info.plist" >/dev/null
+          /usr/libexec/PlistBuddy -c 'Print :NSPhotoLibraryAddUsageDescription' "$APP_PATH/Info.plist" >/dev/null
           /usr/libexec/PlistBuddy -c 'Print :NSFaceIDUsageDescription' "$APP_PATH/Info.plist" >/dev/null
           test -s "$APP_PATH/Assets.car"
           test -s "$APP_PATH/PrivacyInfo.xcprivacy"

@@ -30,6 +30,8 @@
     <string>仅在你主动使用快捷认证时，验证身份以进入私人空间。</string>
     <key>NSPhotoLibraryUsageDescription</key>
     <string>用于选择要导入的照片和视频，并在你确认后请求删除系统原件。</string>
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>仅在你主动导出并选择保存到系统照片时，添加照片或视频副本。</string>
     <key>UIApplicationSupportsIndirectInputEvents</key>
     <true/>
     <key>UILaunchScreen</key>
