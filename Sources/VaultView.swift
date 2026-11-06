@@ -137,8 +137,10 @@ struct VaultView: View {
             }
             .sheet(isPresented: $showDatePicker) {
                 NavigationStack {
-                    DatePicker("定位日期", selection: $dateInput, displayedComponents: .date)
-                        .datePickerStyle(.graphical).padding()
+                    ScrollView {
+                        DatePicker("定位日期", selection: $dateInput, displayedComponents: .date)
+                            .datePickerStyle(.graphical).padding()
+                    }
                         .navigationTitle("按日期查找")
                         .toolbar {
                             ToolbarItem(placement: .cancellationAction) { Button("取消") { showDatePicker = false } }
@@ -146,8 +148,9 @@ struct VaultView: View {
                                 Button("查看当天") { selectedDay = dateInput; dateScope = .all; showDatePicker = false }
                             }
                         }
+                        .safeAreaInset(edge: .bottom) { VaultLockBar(onLock: onLock) }
                 }
-                .presentationDetents([.medium, .large])
+                .presentationDetents([.large])
             }
             .sheet(isPresented: $showAlbums) {
                 VaultAlbumsView(onLock: onLock) { album in
@@ -174,9 +177,6 @@ struct VaultView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .accessibilityAction(.escape, onLock)
-            .safeAreaInset(edge: .bottom) {
-                if isSelecting { selectionBar } else { quickBar }
-            }
             .navigationTitle(selectedAlbum ?? (favoritesOnly ? "收藏" : "私人空间"))
             .navigationBarTitleDisplayMode(.large)
             .navigationDestination(for: VaultItem.self) { item in
@@ -225,6 +225,11 @@ struct VaultView: View {
                 photoLibrary: .shared()
             )
             .onDisappear { exportTask?.cancel() }
+        }
+        .safeAreaInset(edge: .bottom) {
+            if path.isEmpty {
+                if isSelecting { selectionBar } else { quickBar }
+            }
         }
     }
 

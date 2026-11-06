@@ -169,6 +169,7 @@ struct VaultLockBar: View {
     let onLock: () -> Void
     var body: some View {
         Button(action: onLock) { Label("锁定退出", systemImage: "lock.fill").frame(maxWidth: .infinity, minHeight: 44) }
+            .accessibilityIdentifier("modal-lock")
             .padding(.horizontal).padding(.vertical, 4).background(.regularMaterial)
     }
 }
