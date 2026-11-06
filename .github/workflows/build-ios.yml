@@ -38,8 +38,17 @@ jobs:
             -only-testing:FocusVaultTests \
             -resultBundlePath build/TestResults.xcresult 2>&1 | tee build/tests.log
 
+      - name: Upload unit test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: FocusVault-unit-log-${{ github.run_id }}
+          path: build/tests.log
+          retention-days: 7
+
       - name: Build device app without signing
         id: device_build
+        if: steps.tests.outcome == 'success'
         continue-on-error: true
         run: |
           set -o pipefail
@@ -55,52 +64,59 @@ jobs:
 
       - name: UI test on iPhone SE
         id: ui_tests_small
+        if: steps.tests.outcome == 'success'
         continue-on-error: true
         run: |
           set -o pipefail
           xcrun simctl boot 'iPhone SE (3rd generation)' || true
           xcrun simctl bootstatus 'iPhone SE (3rd generation)' -b
-          xcrun simctl ui 'iPhone SE (3rd generation)' appearance light
           xcrun simctl addmedia 'iPhone SE (3rd generation)' Resources/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png
+          for appearance in light dark; do
+          xcrun simctl ui 'iPhone SE (3rd generation)' appearance "$appearance"
           xcodebuild test \
             -project FocusVault.xcodeproj \
             -scheme FocusVault \
             -destination 'platform=iOS Simulator,name=iPhone SE (3rd generation),OS=latest' \
             -parallel-testing-enabled NO \
             -only-testing:FocusVaultUITests \
-            -resultBundlePath build/UITest-SE.xcresult 2>&1 | tee build/ui-tests-se.log
+            -resultBundlePath "build/UITest-se-$appearance.xcresult" 2>&1 | tee "build/ui-tests-se-$appearance.log"
+          done
 
       - name: Upload small-screen test log
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: FocusVault-SE-log-${{ github.run_id }}
-          path: build/ui-tests-se.log
+          path: build/ui-tests-se-*.log
           retention-days: 7
 
       - name: UI test on iPhone 16 Pro Max
         id: ui_tests_large
+        if: steps.tests.outcome == 'success'
         continue-on-error: true
         run: |
           set -o pipefail
           xcrun simctl boot 'iPhone 16 Pro Max' || true
           xcrun simctl bootstatus 'iPhone 16 Pro Max' -b
-          xcrun simctl ui 'iPhone 16 Pro Max' appearance dark
           xcrun simctl addmedia 'iPhone 16 Pro Max' Resources/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png
+          for appearance in light dark; do
+          xcrun simctl ui 'iPhone 16 Pro Max' appearance "$appearance"
           xcodebuild test \
             -project FocusVault.xcodeproj \
             -scheme FocusVault \
             -destination 'platform=iOS Simulator,name=iPhone 16 Pro Max,OS=latest' \
             -parallel-testing-enabled NO \
             -only-testing:FocusVaultUITests \
-            -resultBundlePath build/UITest-ProMax.xcresult 2>&1 | tee build/ui-tests-promax.log
+            -resultBundlePath "build/UITest-promax-$appearance.xcresult" 2>&1 | tee "build/ui-tests-promax-$appearance.log"
+          done
 
       - name: Export UI test screenshots
         if: always()
         run: |
-          mkdir -p build/ui-screens/se build/ui-screens/promax
-          test ! -d build/UITest-SE.xcresult || xcrun xcresulttool export attachments --path build/UITest-SE.xcresult --output-path build/ui-screens/se || true
-          test ! -d build/UITest-ProMax.xcresult || xcrun xcresulttool export attachments --path build/UITest-ProMax.xcresult --output-path build/ui-screens/promax || true
+          for configuration in se-light se-dark promax-light promax-dark; do
+            mkdir -p "build/ui-screens/$configuration"
+            test ! -d "build/UITest-$configuration.xcresult" || xcrun xcresulttool export attachments --path "build/UITest-$configuration.xcresult" --output-path "build/ui-screens/$configuration" || true
+          done
 
       - name: Package IPA
         if: steps.device_build.outcome == 'success'
@@ -109,26 +125,27 @@ jobs:
           test -d "$APP_PATH"
           mkdir -p build/Payload
           cp -R "$APP_PATH" build/Payload/
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP_PATH/Info.plist")" = "0.2.0"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP_PATH/Info.plist")" = "3"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP_PATH/Info.plist")" = "0.3.0"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP_PATH/Info.plist")" = "4"
           /usr/libexec/PlistBuddy -c 'Print :UILaunchScreen' "$APP_PATH/Info.plist" >/dev/null
           /usr/libexec/PlistBuddy -c 'Print :NSCameraUsageDescription' "$APP_PATH/Info.plist" >/dev/null
           /usr/libexec/PlistBuddy -c 'Print :NSPhotoLibraryUsageDescription' "$APP_PATH/Info.plist" >/dev/null
+          /usr/libexec/PlistBuddy -c 'Print :NSFaceIDUsageDescription' "$APP_PATH/Info.plist" >/dev/null
           test -s "$APP_PATH/Assets.car"
           test -s "$APP_PATH/PrivacyInfo.xcprivacy"
           plutil -lint "$APP_PATH/PrivacyInfo.xcprivacy"
           compgen -G "$APP_PATH/AppIcon*.png" >/dev/null
-          ditto -c -k --sequesterRsrc --keepParent build/Payload build/FocusVault-0.2.0-unsigned.ipa
-          shasum -a 256 build/FocusVault-0.2.0-unsigned.ipa > build/FocusVault-0.2.0-unsigned.ipa.sha256
+          ditto -c -k --sequesterRsrc --keepParent build/Payload build/FocusVault-0.3.0-unsigned.ipa
+          shasum -a 256 build/FocusVault-0.3.0-unsigned.ipa > build/FocusVault-0.3.0-unsigned.ipa.sha256
 
       - name: Upload IPA and test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: FocusVault-iOS-0.2.0-build-3
+          name: FocusVault-iOS-0.3.0-build-4
           path: |
-            build/FocusVault-0.2.0-unsigned.ipa
-            build/FocusVault-0.2.0-unsigned.ipa.sha256
+            build/FocusVault-0.3.0-unsigned.ipa
+            build/FocusVault-0.3.0-unsigned.ipa.sha256
             build/ui-screens
             build/*.log
           if-no-files-found: error

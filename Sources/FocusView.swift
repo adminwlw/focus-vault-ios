@@ -8,6 +8,8 @@ struct FocusView: View {
     @State private var taskName = "计时"
     @State private var durationInput = "25"
     @State private var lastValidMinutes = 25
+    @AppStorage("vault-entry-practice-needed") private var entryPractice = false
+    @State private var practiceError = false
     @FocusState private var focusedField: Field?
     @ScaledMetric(relativeTo: .largeTitle) private var timerTextSize: CGFloat = 56
     let onVaultUnlocked: () -> Void
@@ -38,6 +40,20 @@ struct FocusView: View {
             }
             .background(Color(uiColor: .systemGroupedBackground))
             .scrollDismissesKeyboard(.interactively)
+            .safeAreaInset(edge: .top) {
+                if entryPractice {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("练习进入私人空间").font(.headline)
+                        Text(practiceError ? "请在时长框输入刚设置的完整口令，再点键盘“确认”。" : "点计时时长，输入刚设置的口令，再点键盘“确认”。平时输入普通分钟数即可计时。")
+                            .font(.subheadline)
+                        Button("暂不练习") { entryPractice = false }
+                    }
+                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.regularMaterial)
+                    .accessibilityIdentifier("entry-practice-hint")
+                }
+            }
             .navigationTitle("计时器")
             .toolbar {
                 ToolbarItemGroup(placement: .keyboard) {
@@ -102,6 +118,16 @@ struct FocusView: View {
         .frame(height: dynamicTypeSize.isAccessibilitySize ? 236 : 270)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("剩余时间 \(formattedTime(store.remainingSeconds))，\(phaseLabel)")
+        .onLongPressGesture(minimumDuration: 0.8) {
+            Task {
+                if await authStore.verifyBiometrics() { onVaultUnlocked() }
+            }
+        }
+        .accessibilityAction(named: Text("使用设备认证")) {
+            Task {
+                if await authStore.verifyBiometrics() { onVaultUnlocked() }
+            }
+        }
     }
 
     private var manualTimerEditor: some View {
@@ -274,8 +300,13 @@ struct FocusView: View {
         let input = durationInput.trimmingCharacters(in: .whitespacesAndNewlines)
         focusedField = nil
         if VaultAuthStore.isValidPasscode(input), authStore.hasVault, authStore.verify(input, quietly: true) {
+            entryPractice = false
             durationInput = String(lastValidMinutes)
             onVaultUnlocked()
+            return
+        }
+        if entryPractice {
+            practiceError = true
             return
         }
         guard isEditable else {

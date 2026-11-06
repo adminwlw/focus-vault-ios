@@ -196,9 +196,48 @@ final class VaultAuthStore: ObservableObject {
     private let hintKey = "vault-passcode-hint"
     private var failedAttempts = 0
     private var nextAllowedAttempt = Date.distantPast
+    private var biometricKey: Data?
+    private var authenticationSession = UUID()
 
     @Published private(set) var isUnlocked = false
     @Published private(set) var lastError: String?
+    @Published private(set) var biometricsEnabled = UserDefaults.standard.bool(forKey: "vault-biometrics-enabled")
+    @Published private(set) var biometricBusy = false
+
+    func setBiometricsEnabled(_ enabled: Bool) async throws {
+        guard isUnlocked, !biometricBusy else { throw ValidationError("请先解锁私人空间。") }
+        let session = authenticationSession
+        if enabled {
+            let key = try vaultKey()
+            try await BiometricVaultKey.enable(key)
+            guard session == authenticationSession, isUnlocked else {
+                try? BiometricVaultKey.disable()
+                throw ValidationError("私人空间已锁定，请重新解锁后开启。")
+            }
+        } else {
+            try BiometricVaultKey.disable()
+        }
+        biometricsEnabled = enabled
+        UserDefaults.standard.set(enabled, forKey: "vault-biometrics-enabled")
+    }
+
+    func verifyBiometrics() async -> Bool {
+        guard biometricsEnabled, !biometricBusy else { return false }
+        let session = authenticationSession
+        biometricBusy = true
+        defer { biometricBusy = false }
+        do {
+            let key = try await BiometricVaultKey.read()
+            guard session == authenticationSession,
+                  let originalKey = try SecureStore.get(account: keyAccount),
+                  CryptoBox.constantTimeEqual(key, originalKey) else { return false }
+            biometricKey = key
+            isUnlocked = true
+            return true
+        } catch {
+            return false
+        }
+    }
 
     var hasVault: Bool {
         (try? SecureStore.get(account: authAccount)) != nil
@@ -295,6 +334,8 @@ final class VaultAuthStore: ObservableObject {
     }
 
     func lock() {
+        authenticationSession = UUID()
+        biometricKey = nil
         isUnlocked = false
         lastError = nil
     }
@@ -311,6 +352,7 @@ final class VaultAuthStore: ObservableObject {
     }
 
     func vaultKey() throws -> Data {
+        if isUnlocked, let biometricKey { return biometricKey }
         guard isUnlocked, let key = try SecureStore.get(account: keyAccount) else {
             throw ValidationError("私人空间尚未解锁。")
         }

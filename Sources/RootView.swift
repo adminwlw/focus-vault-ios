@@ -27,6 +27,7 @@ struct RootView: View {
             VaultSetupView(required: true) {
                 authStore.lock()
                 vaultStore.lock()
+                UserDefaults.standard.set(true, forKey: "vault-entry-practice-needed")
             }
         }
         .fullScreenCover(isPresented: $showVault, onDismiss: lockVault) {
@@ -50,6 +51,7 @@ struct RootView: View {
                 timerStore.refresh()
                 Task { await timerStore.refreshNotificationStatus() }
             } else if newPhase == .background {
+                UserDefaults.standard.set(false, forKey: "vault-entry-practice-needed")
                 lockVault()
             }
         }

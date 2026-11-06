@@ -30,9 +30,19 @@ struct VaultView: View {
     @State private var isSelecting = false
     @State private var selectedIDs: Set<UUID> = []
     @State private var confirmBatchDelete = false
-    @State private var importedSystemAssetIDs: [String] = []
-    @State private var confirmDeleteSystemOriginals = false
-    @State private var importNote = ""
+    @State private var searchText = ""
+    @State private var dateScope: VaultDateScope = .all
+    @State private var selectedDay: Date?
+    @State private var dateInput = Date()
+    @State private var showDatePicker = false
+    @State private var showOriginals = false
+    @State private var showImportResult = false
+    @State private var importResult = VaultImportResult()
+    @State private var confirmBatchExport = false
+    @State private var batchURLs: [URL] = []
+    @State private var showBatchShare = false
+    @State private var preparingExport = false
+    @State private var exportTask: Task<Void, Never>?
     let onLock: () -> Void
 
     private var columns: [GridItem] {
@@ -44,6 +54,7 @@ struct VaultView: View {
         let filtered = store.activeItems.filter { item in
             (!favoritesOnly || item.isFavorite) && (selectedAlbum == nil || item.albumName == selectedAlbum)
                 && (mediaFilter == nil || item.mediaKind == mediaFilter)
+                && item.matches(query: searchText, dateScope: dateScope, day: selectedDay)
         }
         return filtered.sorted { lhs, rhs in
             switch sortOrder {
@@ -63,6 +74,9 @@ struct VaultView: View {
                     finishSelection()
                 }
             }
+            .onChange(of: searchText) { _ in finishSelection() }
+            .onChange(of: dateScope) { _ in finishSelection() }
+            .onChange(of: selectedDay) { _ in finishSelection() }
             .alert("新建相册", isPresented: $showNewAlbum) {
                 TextField("相册名称", text: $newAlbumName)
                     .accessibilityIdentifier("album-name")
@@ -96,28 +110,10 @@ struct VaultView: View {
             } message: {
                 Text("这些项目将在 30 天后自动永久删除。")
             }
-            .confirmationDialog(
-                "已安全导入 \(importedSystemAssetIDs.count) 个项目",
-                isPresented: $confirmDeleteSystemOriginals,
-                titleVisibility: .visible
-            ) {
-                Button("删除系统照片中的原件", role: .destructive) {
-                    let identifiers = importedSystemAssetIDs
-                    importedSystemAssetIDs = []
-                    Task {
-                        do {
-                            try await store.deleteSystemAssets(localIdentifiers: identifiers)
-                        } catch {
-                            store.errorMessage = error.localizedDescription
-                        }
-                    }
-                }
-                Button("保留系统原件", role: .cancel) {
-                    importedSystemAssetIDs = []
-                }
-            } message: {
-                Text(importNote + "删除会影响启用 iCloud 照片的其他设备；项目仍可能保留在系统“最近删除”中。iOS 会处理权限和删除确认。")
-            }
+            .confirmationDialog("导出会产生新的可见副本", isPresented: $confirmBatchExport, titleVisibility: .visible) {
+                Button("导出 \(selectedIDs.count) 个项目") { prepareBatchExport() }
+                Button("取消", role: .cancel) {}
+            } message: { Text("文件或其他 App 中会留下副本，请选择可信的保存位置。") }
     }
 
     private var presentedNavigation: some View {
@@ -129,10 +125,29 @@ struct VaultView: View {
                 .ignoresSafeArea()
             }
             .sheet(isPresented: $showTrash) {
-                RecentlyDeletedView()
+                RecentlyDeletedView(onLock: onLock)
             }
             .sheet(isPresented: $showManagement) {
-                VaultManagementView()
+                VaultManagementView(onLock: onLock)
+            }
+            .sheet(isPresented: $showImportResult) { VaultImportResultView(result: importResult, onLock: onLock) }
+            .sheet(isPresented: $showOriginals) { VaultOriginalsView(onLock: onLock) }
+            .sheet(isPresented: $showBatchShare, onDismiss: { store.cleanupTemporaryExports() }) {
+                ShareSheet(items: batchURLs) { store.cleanupTemporaryExports() }
+            }
+            .sheet(isPresented: $showDatePicker) {
+                NavigationStack {
+                    DatePicker("定位日期", selection: $dateInput, displayedComponents: .date)
+                        .datePickerStyle(.graphical).padding()
+                        .navigationTitle("按日期查找")
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) { Button("取消") { showDatePicker = false } }
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("查看当天") { selectedDay = dateInput; dateScope = .all; showDatePicker = false }
+                            }
+                        }
+                }
+                .presentationDetents([.medium, .large])
             }
             .sheet(isPresented: $showAlbums) {
                 VaultAlbumsView { album in
@@ -148,6 +163,7 @@ struct VaultView: View {
         NavigationStack(path: $path) {
             VStack(spacing: 0) {
                 filterBar
+                if hasFilters { filterSummary }
                 vaultContent
                     .contentShape(Rectangle())
                     .simultaneousGesture(DragGesture(minimumDistance: 30).onEnded { value in
@@ -155,16 +171,11 @@ struct VaultView: View {
                               abs(value.translation.height) < value.translation.width / 2 else { return }
                         onLock()
                     })
-                if !isSelecting {
-                    Text("\(visibleItems.count) 个项目 · 右滑可锁定退出")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .padding(10)
-                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .accessibilityAction(.escape, onLock)
             .safeAreaInset(edge: .bottom) {
-                if isSelecting { selectionBar }
+                if isSelecting { selectionBar } else { quickBar }
             }
             .navigationTitle(selectedAlbum ?? (favoritesOnly ? "收藏" : "私人空间"))
             .navigationBarTitleDisplayMode(.large)
@@ -172,11 +183,23 @@ struct VaultView: View {
                 VaultDetailView(itemID: item.id, galleryIDs: visibleItems.map(\.id), onLock: onLock)
             }
             .toolbar { vaultToolbar }
+            .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "名称、备注、相册或日期")
             .overlay {
-                if store.isBusy {
+                if store.isBusy || preparingExport {
                     ZStack {
                         Color.black.opacity(0.18).ignoresSafeArea()
-                        ProgressView("正在安全导入…")
+                        VStack(spacing: 16) {
+                            ProgressView(preparingExport ? "正在准备导出…" : "正在安全导入…")
+                            if let progress = store.importProgress {
+                                Text("已处理 \(progress.completed) / \(progress.total) 项").font(.subheadline.monospacedDigit())
+                                Text(progress.currentName).font(.caption).lineLimit(2)
+                            }
+                            Button(store.importProgress?.cancelling == true ? "正在取消…" : "取消") {
+                                store.cancelImport(); exportTask?.cancel()
+                            }
+                            .disabled(store.importProgress?.cancelling == true)
+                            Button("锁定退出", action: onLock)
+                        }
                             .padding(20)
                             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                     }
@@ -185,21 +208,13 @@ struct VaultView: View {
             .onChange(of: pickerItems) { newItems in
                 guard !newItems.isEmpty else { return }
                 Task {
-                    let previousCount = store.activeItems.count
-                    let identifiers = await store.importSelections(newItems, toAlbum: selectedAlbum)
+                    let result = await store.importSelections(newItems, toAlbum: selectedAlbum)
                     pickerItems = []
                     guard store.isLoaded else { return }
                     favoritesOnly = false
                     mediaFilter = nil
-                    if !identifiers.isEmpty {
-                        importNote = store.errorMessage.map { $0 + "\n" } ?? ""
-                        store.errorMessage = nil
-                        importedSystemAssetIDs = identifiers
-                        confirmDeleteSystemOriginals = true
-                    } else if store.activeItems.count > previousCount,
-                              store.errorMessage == nil {
-                        store.errorMessage = "项目已安全导入，但系统没有提供可删除的原件标识，因此没有发起删除。请在系统“照片”中手动删除原件。"
-                    }
+                    importResult = result
+                    showImportResult = true
                 }
             }
             .photosPicker(
@@ -209,6 +224,7 @@ struct VaultView: View {
                 matching: .any(of: [.images, .videos]),
                 photoLibrary: .shared()
             )
+            .onDisappear { exportTask?.cancel() }
         }
     }
 
@@ -217,30 +233,39 @@ struct VaultView: View {
             HStack(spacing: 10) {
                 Button {
                     selectedAlbum = nil
-                    favoritesOnly = false
-                    mediaFilter = nil
-                    finishSelection()
+                    clearFilters()
                 } label: {
                     Label("全部", systemImage: "square.grid.2x2")
                 }
+                .tint(selectedAlbum == nil && !hasFilters ? .accentColor : .secondary)
                 Button { showAlbums = true } label: { Label("相册", systemImage: "folder") }
                     .accessibilityIdentifier("vault-albums")
+                    .tint(selectedAlbum == nil ? .secondary : .accentColor)
                 Button {
                     favoritesOnly.toggle()
                     finishSelection()
                 } label: { Label("收藏", systemImage: favoritesOnly ? "heart.fill" : "heart") }
-                    .tint(favoritesOnly ? .pink : .accentColor)
+                    .tint(favoritesOnly ? .pink : .secondary)
                     .accessibilityValue(favoritesOnly ? "已筛选" : "未筛选")
                 Button {
                     mediaFilter = mediaFilter == .photo ? nil : .photo
                     finishSelection()
                 } label: { Label("照片", systemImage: "photo") }
                     .accessibilityValue(mediaFilter == .photo ? "已筛选" : "未筛选")
+                    .tint(mediaFilter == .photo ? .accentColor : .secondary)
                 Button {
                     mediaFilter = mediaFilter == .video ? nil : .video
                     finishSelection()
                 } label: { Label("视频", systemImage: "video") }
                     .accessibilityValue(mediaFilter == .video ? "已筛选" : "未筛选")
+                    .tint(mediaFilter == .video ? .accentColor : .secondary)
+                Menu {
+                    ForEach(VaultDateScope.allCases) { scope in
+                        Button(scope.rawValue) { selectedDay = nil; dateScope = scope }
+                    }
+                    Button("选择日期…") { showDatePicker = true }
+                } label: { Label("日期", systemImage: "calendar") }
+                    .tint(dateScope != .all || selectedDay != nil ? .accentColor : .secondary)
             }
             .buttonStyle(.bordered)
             .controlSize(.regular)
@@ -248,6 +273,7 @@ struct VaultView: View {
             .padding(.vertical, 8)
         }
         .frame(height: filterBarHeight)
+        .accessibilityIdentifier("vault-filter-bar")
     }
 
     @ViewBuilder
@@ -259,14 +285,15 @@ struct VaultView: View {
                     systemImage: favoritesOnly ? "heart" : "photo.on.rectangle.angled",
                     description: emptyDescription
                 )
-                Button(action: requestPhotoImport) {
-                    Label("导入照片或视频", systemImage: "photo.badge.plus")
+                Button(action: hasFilters ? clearFilters : requestPhotoImport) {
+                    Label(hasFilters ? "清除筛选" : "导入照片或视频", systemImage: hasFilters ? "line.3.horizontal.decrease.circle" : "photo.badge.plus")
                 }
                 .buttonStyle(.borderedProminent)
             }
             .frame(maxWidth: 560)
             .frame(maxWidth: .infinity)
             .padding(.bottom, 32)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             ScrollView {
                 LazyVGrid(columns: columns, spacing: 2) {
@@ -320,11 +347,8 @@ struct VaultView: View {
         ToolbarItem(placement: .navigationBarLeading) {
             if isSelecting {
                 Button("取消") { finishSelection() }
-            } else {
-                Button(action: onLock) {
-                    Label("锁定", systemImage: "lock")
-                }
-                .accessibilityIdentifier("vault-lock")
+            } else if selectedAlbum != nil {
+                Button("相册") { showAlbums = true }
             }
         }
         ToolbarItemGroup(placement: .navigationBarTrailing) {
@@ -360,29 +384,6 @@ struct VaultView: View {
             .disabled(!UIImagePickerController.isSourceTypeAvailable(.camera))
 
             Divider()
-            Button {
-                selectedAlbum = nil
-                favoritesOnly = false
-            } label: {
-                Label("全部项目", systemImage: "square.grid.3x3")
-            }
-            Button {
-                selectedAlbum = nil
-                favoritesOnly = true
-            } label: {
-                Label("收藏", systemImage: "heart")
-            }
-            if !store.albums.isEmpty {
-                Menu("相册") {
-                    ForEach(store.albums, id: \.self) { album in
-                        Button(album) {
-                            favoritesOnly = false
-                            selectedAlbum = album
-                        }
-                    }
-                }
-            }
-
             Menu("排序") {
                 ForEach(VaultSortOrder.allCases) { order in
                     Button {
@@ -409,6 +410,10 @@ struct VaultView: View {
             } label: {
                 Label("最近删除", systemImage: "trash")
             }
+            Button { showOriginals = true } label: {
+                Label("系统原件（\(store.pendingOriginalItems.count) 项待确认）", systemImage: "photo.badge.checkmark")
+            }
+            .accessibilityIdentifier("vault-originals")
             Button {
                 showManagement = true
             } label: {
@@ -449,13 +454,14 @@ struct VaultView: View {
     }
 
     private var emptyTitle: String {
+        if hasFilters { return "没有符合条件的项目" }
         if favoritesOnly { return "还没有收藏" }
         if let selectedAlbum { return "“\(selectedAlbum)”为空" }
         return "私人空间为空"
     }
 
     private var emptyDescription: String {
-        if favoritesOnly { return "收藏的项目会集中显示在这里。" }
+        if hasFilters { return "换个关键词或清除筛选试试，其他照片和视频仍保留在当前相册中。" }
         return "从系统照片中选择，或使用相机直接拍摄。导入完成不等于系统原件已删除。"
     }
 
@@ -468,9 +474,13 @@ struct VaultView: View {
     }
 
     private var selectionBar: some View {
-        selectionLayout {
-            Text("已选 \(selectedIDs.count) 项")
-                .font(.footnote.monospacedDigit())
+        VStack(spacing: 10) {
+            HStack {
+                Text("已选 \(selectedIDs.count) 项").font(.footnote.monospacedDigit())
+                Spacer()
+                Button(action: onLock) { Label("锁定退出", systemImage: "lock") }
+            }
+            selectionLayout {
             Button {
                 tryAction { try store.setFavorite(selectedIDs, value: true) }
                 finishSelection()
@@ -499,12 +509,17 @@ struct VaultView: View {
             }
             .disabled(selectedIDs.isEmpty)
 
+            Button { confirmBatchExport = true } label: { Label("导出", systemImage: "square.and.arrow.up") }
+                .disabled(selectedIDs.isEmpty)
             Button(role: .destructive) {
                 confirmBatchDelete = true
             } label: {
                 Label("删除", systemImage: "trash")
             }
             .disabled(selectedIDs.isEmpty)
+            }
+            .font(.caption)
+            .frame(maxWidth: .infinity)
         }
         .labelStyle(.titleAndIcon)
         .frame(maxWidth: .infinity)
@@ -517,7 +532,62 @@ struct VaultView: View {
         if dynamicTypeSize.isAccessibilitySize {
             return AnyLayout(VStackLayout(alignment: .center, spacing: 12))
         }
-        return AnyLayout(HStackLayout(alignment: .center, spacing: 28))
+        return AnyLayout(HStackLayout(alignment: .center, spacing: 16))
+    }
+
+    private var hasFilters: Bool {
+        favoritesOnly || mediaFilter != nil || dateScope != .all || selectedDay != nil || !searchText.isEmpty
+    }
+
+    private func clearFilters() {
+        favoritesOnly = false
+        mediaFilter = nil
+        dateScope = .all
+        selectedDay = nil
+        searchText = ""
+        finishSelection()
+    }
+
+    private var filterSummary: some View {
+        HStack {
+            Text([favoritesOnly ? "收藏" : nil, mediaFilter == .photo ? "照片" : mediaFilter == .video ? "视频" : nil,
+                  dateScope != .all ? dateScope.rawValue : nil,
+                  selectedDay?.formatted(date: .numeric, time: .omitted), searchText.isEmpty ? nil : "搜索：\(searchText)"]
+                .compactMap { $0 }.joined(separator: " · "))
+                .font(.caption).foregroundStyle(.secondary).lineLimit(2)
+            Spacer()
+            Button("清除", action: clearFilters).font(.caption)
+        }
+        .padding(.horizontal, 16).padding(.bottom, 8)
+    }
+
+    private var quickBar: some View {
+        HStack {
+            Button(action: onLock) { Label("锁定退出", systemImage: "lock.fill") }
+                .accessibilityIdentifier("vault-lock")
+            Spacer()
+            Text("\(visibleItems.count) 项").font(.footnote).foregroundStyle(.secondary)
+            Spacer()
+            Button("选择") { isSelecting = true }
+                .disabled(visibleItems.isEmpty).accessibilityIdentifier("vault-select")
+        }
+        .frame(minHeight: 44)
+        .padding(.horizontal, 20).padding(.vertical, 6)
+        .background(.regularMaterial)
+    }
+
+    private func prepareBatchExport() {
+        let ids = selectedIDs
+        preparingExport = true
+        exportTask = Task {
+            defer { preparingExport = false }
+            do {
+                batchURLs = try await store.exportFiles(ids)
+                guard !Task.isCancelled, store.isLoaded else { return }
+                showBatchShare = true
+                finishSelection()
+            } catch is CancellationError {} catch { store.errorMessage = error.localizedDescription }
+        }
     }
 
     private func finishSelection() {
@@ -617,7 +687,7 @@ private struct VaultAlbumsView: View {
     }
 }
 
-private struct VaultGridCell: View {
+struct VaultGridCell: View {
     @EnvironmentObject private var store: VaultStore
     let item: VaultItem
     var isSelected = false
@@ -647,6 +717,9 @@ private struct VaultGridCell: View {
                 }
                 if item.mediaKind == .video {
                     Image(systemName: "video.fill")
+                    if let duration = item.videoDuration {
+                        Text(String(format: "%d:%02d", Int(duration) / 60, Int(duration) % 60)).monospacedDigit()
+                    }
                 }
             }
             .font(.caption2)
@@ -668,13 +741,22 @@ private struct VaultGridCell: View {
                 image = UIImage(data: data)
             }
         }
-        .accessibilityLabel(item.mediaKind == .photo ? "照片" : "视频")
-        .accessibilityValue(item.importedAt.formatted(date: .abbreviated, time: .shortened))
+        .accessibilityLabel("\(item.mediaKind == .photo ? "照片" : "视频")，\(item.title)")
+        .accessibilityValue([item.albumName, item.note, item.importedAt.formatted(date: .abbreviated, time: .shortened)].compactMap { $0 }.joined(separator: "，"))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
-private struct VaultDetailView: View {
+enum VaultPlayback {
+    static func makePlayer(url: URL) -> AVPlayer {
+        let player = AVPlayer(url: url)
+        player.isMuted = true
+        player.pause()
+        return player
+    }
+}
+
+struct VaultDetailView: View {
     @EnvironmentObject private var store: VaultStore
     @Environment(\.dismiss) private var dismiss
     @State private var itemID: UUID
@@ -687,6 +769,8 @@ private struct VaultDetailView: View {
     @State private var confirmExport = false
     @State private var confirmDelete = false
     @State private var loadError: String?
+    @State private var showEditor = false
+    @State private var muted = true
 
     init(itemID: UUID, galleryIDs: [UUID], onLock: @escaping () -> Void) {
         _itemID = State(initialValue: itemID)
@@ -707,32 +791,41 @@ private struct VaultDetailView: View {
                         ZoomableImage(image: image)
                     } else if item.mediaKind == .video, let player {
                         VideoPlayer(player: player)
-                            .onAppear { player.play() }
                             .onDisappear { player.pause() }
                     } else {
                         ProgressView()
                             .tint(.white)
                     }
                 }
-                .navigationTitle(item.originalName)
+                .navigationTitle(item.title)
                 .navigationBarTitleDisplayMode(.inline)
-                .toolbarColorScheme(.dark, for: .navigationBar)
-                .toolbarBackground(.black, for: .navigationBar)
+                .toolbarColorScheme(.dark, for: .navigationBar, .bottomBar)
+                .toolbarBackground(.black, for: .navigationBar, .bottomBar)
+                .toolbarBackground(.visible, for: .navigationBar, .bottomBar)
                 .toolbar {
                     ToolbarItemGroup(placement: .bottomBar) {
+                        Button(action: onLock) { Label("锁定退出", systemImage: "lock.fill") }
+                            .accessibilityIdentifier("detail-lock")
+                            .frame(minWidth: 44, minHeight: 44)
                         Button { browse(-1) } label: { Label("上一项", systemImage: "chevron.left") }
                             .disabled((galleryIDs.firstIndex(of: itemID) ?? 0) == 0)
                         Spacer()
                         Text("\((galleryIDs.firstIndex(of: itemID) ?? 0) + 1) / \(galleryIDs.count)")
                             .font(.footnote.monospacedDigit())
+                            .foregroundStyle(.white)
+                            .accessibilityIdentifier("gallery-position")
                         Spacer()
                         Button { browse(1) } label: { Label("下一项", systemImage: "chevron.right") }
                             .disabled((galleryIDs.firstIndex(of: itemID) ?? 0) >= galleryIDs.count - 1)
+                        if let player {
+                            Button {
+                                muted.toggle()
+                                player.isMuted = muted
+                            } label: { Label(muted ? "开启声音" : "关闭声音", systemImage: muted ? "speaker.slash" : "speaker.wave.2") }
+                                .accessibilityIdentifier("video-mute")
+                        }
                     }
                     ToolbarItemGroup(placement: .navigationBarTrailing) {
-                        Button(action: onLock) {
-                            Label("锁定退出", systemImage: "lock.fill").labelStyle(.iconOnly)
-                        }
                         Button {
                             confirmExport = true
                         } label: {
@@ -740,6 +833,14 @@ private struct VaultDetailView: View {
                                 .labelStyle(.iconOnly)
                         }
                         Menu {
+                            Button("名称与备注") { showEditor = true }
+                            if let player {
+                                Button("播放视频") { player.play() }
+                                Button("暂停视频") { player.pause() }
+                            }
+                            if item.deletedAt != nil {
+                                Button("恢复项目") { tryAction { try store.restore(item); dismiss() } }
+                            } else {
                             Button {
                                 tryAction { try store.toggleFavorite(item) }
                             } label: {
@@ -750,16 +851,21 @@ private struct VaultDetailView: View {
                             } label: {
                                 Label("移到最近删除", systemImage: "trash")
                             }
+                            }
                         } label: {
                             Label("更多", systemImage: "ellipsis.circle")
                                 .labelStyle(.iconOnly)
                         }
+                        .accessibilityIdentifier("detail-more")
                     }
                 }
-                .task(id: item.id) { load(item) }
+                .task(id: item.id) { await load(item) }
             } else {
                 EmptyStateView("项目不存在", systemImage: "exclamationmark.triangle")
             }
+        }
+        .sheet(isPresented: $showEditor) {
+            if let item { VaultMetadataEditor(item: item, onLock: onLock) }
         }
         .sheet(isPresented: $showShare) {
             if let exportURL {
@@ -771,7 +877,7 @@ private struct VaultDetailView: View {
         .confirmationDialog("导出会产生新的可见副本", isPresented: $confirmExport, titleVisibility: .visible) {
             Button("继续导出") {
                 guard let item else { return }
-                prepareShare(item)
+                Task { await prepareShare(item) }
             }
             Button("取消", role: .cancel) {}
         } message: {
@@ -803,19 +909,25 @@ private struct VaultDetailView: View {
         }
     }
 
-    private func load(_ item: VaultItem) {
+    private func load(_ item: VaultItem) async {
         do {
             if item.mediaKind == .photo {
-                guard let decoded = UIImage(data: try store.data(for: item)) else {
+                let urls = try await store.exportFiles([item.id])
+                guard let url = urls.first else { throw ValidationError("项目已不存在。") }
+                let data = try await VaultMediaFile.run { try Data(contentsOf: url) }
+                guard !Task.isCancelled, itemID == item.id, store.isLoaded else { return }
+                guard let decoded = UIImage(data: data) else {
                     throw ValidationError("照片格式无法读取。")
                 }
                 image = decoded
             } else {
-                let url = try store.temporaryExport(for: item)
+                let urls = try await store.exportFiles([item.id])
+                guard let url = urls.first, !Task.isCancelled, itemID == item.id, store.isLoaded else { return }
                 exportURL = url
-                player = AVPlayer(url: url)
+                muted = true
+                player = VaultPlayback.makePlayer(url: url)
             }
-        } catch {
+        } catch is CancellationError {} catch {
             loadError = error.localizedDescription
         }
     }
@@ -829,9 +941,10 @@ private struct VaultDetailView: View {
         itemID = galleryIDs[current + offset]
     }
 
-    private func prepareShare(_ item: VaultItem) {
+    private func prepareShare(_ item: VaultItem) async {
         do {
-            exportURL = try store.temporaryExport(for: item)
+            exportURL = try await store.exportFiles([item.id]).first
+            guard store.isLoaded, !Task.isCancelled else { return }
             showShare = true
         } catch {
             loadError = error.localizedDescription
@@ -930,6 +1043,8 @@ private struct RecentlyDeletedView: View {
     @State private var confirmEmpty = false
     @State private var itemToDeletePermanently: VaultItem?
     @State private var errorMessage: String?
+    @State private var previewItem: VaultItem?
+    let onLock: () -> Void
 
     var body: some View {
         NavigationStack {
@@ -940,11 +1055,13 @@ private struct RecentlyDeletedView: View {
                 } else {
                     ForEach(store.deletedItems) { item in
                         HStack {
-                            Image(systemName: item.mediaKind == .photo ? "photo" : "video")
-                                .frame(width: 30)
-                                .foregroundStyle(.secondary)
+                            Button { previewItem = item } label: {
+                                VaultGridCell(item: item).frame(width: 64, height: 64).clipped()
+                            }
+                            .accessibilityLabel("预览 \(item.title)")
                             VStack(alignment: .leading, spacing: 3) {
-                                Text(item.originalName)
+                                Text(item.title).lineLimit(2)
+                                Text("剩余 \(item.remainingTrashDays) 天").font(.caption).foregroundStyle(.secondary)
                                 if let deletedAt = item.deletedAt {
                                     Text("删除于 \(deletedAt.formatted(date: .abbreviated, time: .shortened))")
                                         .font(.caption)
@@ -966,6 +1083,13 @@ private struct RecentlyDeletedView: View {
                 }
             }
             .navigationTitle("最近删除")
+            .safeAreaInset(edge: .bottom) { VaultLockBar(onLock: onLock) }
+            .sheet(item: $previewItem) { item in
+                NavigationStack {
+                    VaultDetailView(itemID: item.id, galleryIDs: store.deletedItems.map(\.id), onLock: onLock)
+                        .toolbar { ToolbarItem(placement: .cancellationAction) { Button("完成") { previewItem = nil } } }
+                }
+            }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -1022,6 +1146,7 @@ private struct RecentlyDeletedView: View {
 private struct VaultManagementView: View {
     @EnvironmentObject private var store: VaultStore
     @Environment(\.dismiss) private var dismiss
+    let onLock: () -> Void
 
     var body: some View {
         NavigationStack {
@@ -1041,10 +1166,13 @@ private struct VaultManagementView: View {
                     NavigationLink("修改口令") {
                         ChangePasscodeView()
                     }
+                    NavigationLink("面容 ID / 触控 ID") { VaultBiometricSettings() }
+                    NavigationLink("使用说明") { VaultUsageHelp() }
                 }
                 Section("存储") {
                     LabeledContent("项目", value: "\(store.activeItems.count)")
                     LabeledContent("最近删除", value: "\(store.deletedItems.count)")
+                    LabeledContent("媒体占用", value: ByteCountFormatter.string(fromByteCount: store.items.reduce(Int64(0)) { $0 + Int64($1.byteCount) }, countStyle: .file))
                 }
             }
             .navigationTitle("管理私人空间")
@@ -1055,6 +1183,7 @@ private struct VaultManagementView: View {
                 }
             }
         }
+        .safeAreaInset(edge: .bottom) { VaultLockBar(onLock: onLock) }
     }
 }
 
@@ -1323,6 +1452,7 @@ struct ShareSheet: UIViewControllerRepresentable {
 
     func makeUIViewController(context: Context) -> UIActivityViewController {
         let controller = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        controller.view.accessibilityIdentifier = "vault-share-sheet"
         controller.completionWithItemsHandler = { _, _, _, _ in
             DispatchQueue.main.async { onComplete() }
         }

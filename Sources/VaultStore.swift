@@ -6,6 +6,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 import UIKit
 import AVFoundation
+import CryptoKit
 
 @MainActor
 final class VaultStore: ObservableObject {
@@ -17,11 +18,16 @@ final class VaultStore: ObservableObject {
     private let exportURL: URL
     private var keyData: Data?
     private var sessionID = UUID()
+    private var importTask: Task<VaultImportResult, Never>?
+    private var failedSelections: [PhotosPickerItem] = []
+    private var lastImportAlbum: String?
 
     @Published private(set) var items: [VaultItem] = []
     @Published private(set) var albums: [String] = []
     @Published private(set) var isLoaded = false
     @Published private(set) var isBusy = false
+    @Published private(set) var importProgress: VaultImportProgress?
+    @Published private(set) var retryCount = 0
     @Published var errorMessage: String?
 
     init(fileManager: FileManager = .default, directory: URL? = nil) {
@@ -43,6 +49,10 @@ final class VaultStore: ObservableObject {
         items.filter { $0.deletedAt != nil }.sorted { ($0.deletedAt ?? .distantPast) > ($1.deletedAt ?? .distantPast) }
     }
 
+    var pendingOriginalItems: [VaultItem] {
+        activeItems.filter { $0.originalState != .notInLibrary && $0.originalState != .deletionSucceeded }
+    }
+
     func unlock(using key: Data) throws {
         lock()
         do {
@@ -53,7 +63,7 @@ final class VaultStore: ObservableObject {
                 let encrypted = try Data(contentsOf: indexURL)
                 let plaintext = try CryptoBox.open(encrypted, using: key)
                 if let index = try? JSONDecoder().decode(VaultIndex.self, from: plaintext) {
-                    guard index.version == 2 else { throw ValidationError("相册数据版本暂不受支持。") }
+                    guard (2...3).contains(index.version) else { throw ValidationError("相册数据版本暂不受支持。") }
                     items = index.items
                     albums = index.albums
                 } else {
@@ -74,6 +84,11 @@ final class VaultStore: ObservableObject {
     }
 
     func lock() {
+        importTask?.cancel()
+        importTask = nil
+        importProgress = nil
+        failedSelections = []
+        retryCount = 0
         sessionID = UUID()
         isBusy = false
         items = []
@@ -84,46 +99,129 @@ final class VaultStore: ObservableObject {
         try? fileManager.removeItem(at: exportURL)
     }
 
-    func importSelections(_ selections: [PhotosPickerItem], toAlbum album: String? = nil) async -> [String] {
-        guard !selections.isEmpty, isLoaded, !isBusy else { return [] }
+    func importSelections(_ selections: [PhotosPickerItem], toAlbum album: String? = nil) async -> VaultImportResult {
+        guard !selections.isEmpty, isLoaded, !isBusy else { return VaultImportResult() }
         let importSession = sessionID
         isBusy = true
-        defer { if sessionID == importSession { isBusy = false } }
-        var failures = 0
-        var importedAssetIdentifiers: [String] = []
+        failedSelections = []
+        retryCount = 0
+        lastImportAlbum = album
+        importProgress = VaultImportProgress(total: selections.count)
+        let task = Task { await performImport(selections, album: album, session: importSession) }
+        importTask = task
+        let result = await task.value
+        if sessionID == importSession {
+            isBusy = false
+            importProgress = nil
+            importTask = nil
+            retryCount = failedSelections.count
+        }
+        return result
+    }
 
-        for selection in selections {
-            guard isLoaded, sessionID == importSession, !Task.isCancelled else { return [] }
+    func cancelImport() {
+        importProgress?.cancelling = true
+        importTask?.cancel()
+    }
+
+    func retryImport() async -> VaultImportResult {
+        await importSelections(failedSelections, toAlbum: lastImportAlbum)
+    }
+
+    private func performImport(_ selections: [PhotosPickerItem], album: String?, session: UUID) async -> VaultImportResult {
+        var result = VaultImportResult()
+        for (index, selection) in selections.enumerated() {
+            guard isLoaded, sessionID == session else { result.cancelled = true; return result }
+            if Task.isCancelled {
+                failedSelections.append(contentsOf: selections[index...])
+                result.cancelled = true
+                break
+            }
+            importProgress?.currentName = "正在读取第 \(index + 1) / \(selections.count) 项"
             do {
-                guard let data = try await selection.loadTransferable(type: Data.self) else {
-                    failures += 1
-                    continue
+                guard let file = try await selection.loadTransferable(type: PickedVaultFile.self) else {
+                    throw ValidationError("系统未提供可读取的文件。")
                 }
-                guard isLoaded, sessionID == importSession, !Task.isCancelled else { return [] }
-                let kind: VaultMediaKind = selection.supportedContentTypes.contains(where: { $0.conforms(to: .movie) })
-                    ? .video
-                    : .photo
-                let fileExtension = selection.supportedContentTypes.first?.preferredFilenameExtension
-                    ?? (kind == .photo ? "jpg" : "mov")
-                let capturedAt = kind == .photo ? capturedDate(from: data) : nil
-                try importData(
-                    data,
-                    kind: kind,
-                    originalName: "导入项目.\(fileExtension)",
-                    capturedAt: capturedAt,
-                    album: album
-                )
-                if let identifier = selection.itemIdentifier {
-                    importedAssetIdentifiers.append(identifier)
-                }
+                defer { try? FileManager.default.removeItem(at: file.url.deletingLastPathComponent()) }
+                try Task.checkCancellation()
+                guard isLoaded, sessionID == session else { result.cancelled = true; return result }
+                importProgress?.currentName = file.url.lastPathComponent
+                let kind: VaultMediaKind = selection.supportedContentTypes.contains(where: { $0.conforms(to: .movie) }) ? .video : .photo
+                let imported = try await importFile(file.url, kind: kind, album: album, sourceIdentifier: selection.itemIdentifier)
+                if imported.duplicate { result.duplicateIDs.append(imported.id) }
+                else { result.importedIDs.append(imported.id) }
+            } catch is CancellationError {
+                if sessionID == session { failedSelections.append(contentsOf: selections[index...]) }
+                result.cancelled = true
+                break
             } catch {
-                failures += 1
+                guard sessionID == session else { result.cancelled = true; return result }
+                failedSelections.append(selection)
+                result.failures.append("第 \(index + 1) 项：\(error.localizedDescription)")
+            }
+            if sessionID == session { importProgress?.completed = index + 1 }
+        }
+        return result
+    }
+
+    func importFile(_ source: URL, kind: VaultMediaKind, album: String? = nil,
+                    sourceIdentifier: String? = nil) async throws -> (id: UUID, duplicate: Bool) {
+        guard let keyData, isLoaded else { throw ValidationError("请先解锁私人空间。") }
+        let album = try album.map { try validAlbumName($0) }
+        let session = sessionID
+        let sourceSize = try source.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
+        let available = try rootURL.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]).volumeAvailableCapacityForImportantUsage
+        if let available, Int64(sourceSize) > max(0, (available - 64 * 1_024 * 1_024) / 2) {
+            throw ValidationError("储存空间不足，原件已保留。请释放空间后重试。")
+        }
+        let info = try await VaultMediaFile.run { try VaultMediaFile.inspect(source, kind: kind) }
+        guard sessionID == session, isLoaded else { throw CancellationError() }
+        // Older indexes have no fingerprint; compare only candidates of the same size and type.
+        for candidate in items.filter({ $0.mediaKind == kind && $0.byteCount == info.size }) {
+            if let known = candidate.contentDigest, known != info.digest { continue }
+            let file = mediaFileURL(for: candidate.id)
+            let hash: String
+            do { hash = try await VaultMediaFile.run { try VaultMediaFile.decryptedDigest(file, key: keyData) } }
+            catch is CancellationError { throw CancellationError() }
+            catch { continue }
+            guard sessionID == session, isLoaded else { throw CancellationError() }
+            if hash == info.digest {
+                var updated = items
+                if let index = updated.firstIndex(where: { $0.id == candidate.id }) {
+                    updated[index].contentDigest = hash
+                    updated[index].deletedAt = nil
+                    if let album { updated[index].albumName = album }
+                    if let sourceIdentifier {
+                        updated[index].sourceIdentifier = sourceIdentifier
+                        updated[index].originalState = .kept
+                        updated[index].originalCheckedAt = Date()
+                    }
+                }
+                try commit(updated, albums: albums + (album.map { [$0] } ?? []))
+                return (candidate.id, true)
             }
         }
-        if failures > 0, isLoaded {
-            errorMessage = "有 \(failures) 个项目未能导入，已成功的项目不受影响。"
+        let item = VaultItem(id: UUID(), originalName: source.lastPathComponent,
+                             importedAt: Date(), capturedAt: info.capturedAt, mediaKind: kind,
+                             byteCount: info.size, albumName: album, isFavorite: false, deletedAt: nil,
+                             contentDigest: info.digest, sourceIdentifier: sourceIdentifier,
+                             originalState: sourceIdentifier == nil ? .unknown : .kept,
+                             originalCheckedAt: Date(), videoDuration: info.duration)
+        let destination = mediaFileURL(for: item.id)
+        do {
+            let writtenDigest = try await VaultMediaFile.run { try VaultMediaFile.encrypt(source, to: destination, key: keyData) }
+            guard sessionID == session, isLoaded else { throw CancellationError() }
+            guard writtenDigest == info.digest else { throw ValidationError("导入期间文件发生变化，原件已保留。") }
+            if let thumbnail = info.thumbnail {
+                try protectedWrite(try CryptoBox.seal(thumbnail, using: keyData), to: thumbnailFileURL(for: item.id))
+            }
+            try commit(items + [item], albums: albums + (album.map { [$0] } ?? []))
+            return (item.id, false)
+        } catch {
+            try? fileManager.removeItem(at: destination)
+            try? fileManager.removeItem(at: thumbnailFileURL(for: item.id))
+            throw error
         }
-        return importedAssetIdentifiers
     }
 
     func requestPhotoLibraryReadWriteAccess() async -> Bool {
@@ -138,9 +236,11 @@ final class VaultStore: ObservableObject {
     }
 
     func deleteSystemAssets(localIdentifiers: [String]) async throws {
+        let session = sessionID
         let identifiers = Array(Set(localIdentifiers))
         guard !identifiers.isEmpty else { return }
         let status = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
+        guard sessionID == session, isLoaded else { throw CancellationError() }
         guard status == .authorized || status == .limited else {
             throw ValidationError("没有照片库修改权限，系统原件已保留。")
         }
@@ -161,25 +261,83 @@ final class VaultStore: ObservableObject {
         }
     }
 
+    func deleteOriginals(for ids: Set<UUID>) async throws {
+        let session = sessionID
+        let targets = activeItems.filter { ids.contains($0.id) }
+        guard !targets.isEmpty, targets.allSatisfy({ $0.sourceIdentifier != nil }) else {
+            throw ValidationError("部分项目没有系统原件标识，请在系统“照片”中手动核对。")
+        }
+        // Revalidate stored media before offering deletion of the only system copy.
+        guard let keyData else { throw ValidationError("请先解锁私人空间。") }
+        for item in targets {
+            let file = mediaFileURL(for: item.id)
+            let hash = try await VaultMediaFile.run { try VaultMediaFile.decryptedDigest(file, key: keyData) }
+            if let expected = item.contentDigest, expected != hash { throw AppSecurityError.invalidCiphertext }
+        }
+        guard sessionID == session, isLoaded else { throw CancellationError() }
+        try await deleteSystemAssets(localIdentifiers: targets.compactMap(\.sourceIdentifier))
+        guard sessionID == session, isLoaded else { return }
+        let identifiers = Set(targets.compactMap(\.sourceIdentifier))
+        var updated = items
+        for index in updated.indices where updated[index].sourceIdentifier.map(identifiers.contains) == true {
+            updated[index].originalState = .deletionSucceeded
+            updated[index].originalCheckedAt = Date()
+        }
+        try commit(updated, albums: albums)
+    }
+
+    func checkOriginals() async throws {
+        let session = sessionID
+        guard await requestPhotoLibraryReadWriteAccess() else {
+            throw ValidationError("没有照片库权限，原件状态仍未确认。")
+        }
+        guard sessionID == session, isLoaded else { return }
+        let identifiers = items.compactMap(\.sourceIdentifier)
+        let fetched = PHAsset.fetchAssets(withLocalIdentifiers: identifiers, options: nil)
+        var found = Set<String>()
+        fetched.enumerateObjects { asset, _, _ in found.insert(asset.localIdentifier) }
+        var updated = items
+        for index in updated.indices where updated[index].sourceIdentifier != nil {
+            let present = found.contains(updated[index].sourceIdentifier!)
+            if present { updated[index].originalState = .kept }
+            else if updated[index].originalState != .deletionSucceeded { updated[index].originalState = .unknown }
+            updated[index].originalCheckedAt = Date()
+        }
+        try commit(updated, albums: albums)
+    }
+
+    func editMetadata(_ id: UUID, name: String, note: String) throws {
+        let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard name.count <= 80, !name.contains(where: \.isNewline), note.count <= 2_000 else {
+            throw ValidationError("名称最多 80 个字符，备注最多 2000 个字符。")
+        }
+        try update(id) {
+            $0.displayName = name.isEmpty ? nil : name
+            $0.note = note.isEmpty ? nil : note
+        }
+    }
+
     func importCapturedImage(_ image: UIImage, toAlbum album: String? = nil) throws {
         guard let data = image.jpegData(compressionQuality: 0.94) else {
             throw ValidationError("无法读取刚拍摄的照片。")
         }
-        try importData(data, kind: .photo, originalName: "相机拍摄.jpg", capturedAt: Date(), album: album)
+        let id = try importData(data, kind: .photo, originalName: "相机拍摄.jpg", capturedAt: Date(), album: album)
+        try update(id) { $0.originalState = .notInLibrary; $0.originalCheckedAt = Date() }
     }
 
+    @discardableResult
     func importData(
         _ data: Data,
         kind: VaultMediaKind,
         originalName: String,
         capturedAt: Date? = nil,
         album: String? = nil
-    ) throws {
+    ) throws -> UUID {
         guard let keyData else { throw ValidationError("私人空间尚未解锁。") }
         guard !data.isEmpty else { throw ValidationError("导入项目为空。") }
         let decodedImage = kind == .photo ? UIImage(data: data) : nil
         if kind == .photo, decodedImage == nil { throw ValidationError("照片格式无法读取。") }
-        let item = VaultItem(
+        var item = VaultItem(
             id: UUID(),
             originalName: originalName,
             importedAt: Date(),
@@ -188,7 +346,8 @@ final class VaultStore: ObservableObject {
             byteCount: data.count,
             albumName: album,
             isFavorite: false,
-            deletedAt: nil
+            deletedAt: nil,
+            contentDigest: SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
         )
         let encrypted = try CryptoBox.seal(data, using: keyData)
         let mediaFile = mediaFileURL(for: item.id)
@@ -202,8 +361,9 @@ final class VaultStore: ObservableObject {
                     to: thumbnailFileURL(for: item.id)
                 )
             }
-            if kind == .video { try createVideoThumbnail(data, id: item.id, key: keyData) }
+            if kind == .video { item.videoDuration = try createVideoThumbnail(data, id: item.id, key: keyData) }
             try commit(items + [item], albums: albums + (album.map { [$0] } ?? []))
+            return item.id
         } catch {
             try? fileManager.removeItem(at: mediaFile)
             try? fileManager.removeItem(at: thumbnailFileURL(for: item.id))
@@ -213,8 +373,11 @@ final class VaultStore: ObservableObject {
 
     func data(for item: VaultItem) throws -> Data {
         guard let keyData else { throw ValidationError("私人空间尚未解锁。") }
-        let encrypted = try Data(contentsOf: mediaFileURL(for: item.id))
-        return try CryptoBox.open(encrypted, using: keyData)
+        let data = try VaultMediaFile.data(mediaFileURL(for: item.id), key: keyData)
+        if let expected = item.contentDigest {
+            guard SHA256.hash(data: data).map({ String(format: "%02x", $0) }).joined() == expected else { throw AppSecurityError.invalidCiphertext }
+        }
+        return data
     }
 
     func thumbnailData(for item: VaultItem) throws -> Data {
@@ -228,11 +391,39 @@ final class VaultStore: ObservableObject {
     }
 
     func temporaryExport(for item: VaultItem) throws -> URL {
+        guard let keyData else { throw ValidationError("请先解锁私人空间。") }
         try fileManager.createDirectory(at: exportURL, withIntermediateDirectories: true)
         let safeName = URL(fileURLWithPath: item.originalName).lastPathComponent
         let url = exportURL.appendingPathComponent("\(item.id.uuidString)-\(safeName)")
-        try protectedWrite(try data(for: item), to: url)
+        if !fileManager.fileExists(atPath: url.path) { try VaultMediaFile.decrypt(mediaFileURL(for: item.id), to: url, key: keyData) }
         return url
+    }
+
+    func exportFiles(_ ids: Set<UUID>) async throws -> [URL] {
+        guard let keyData, isLoaded else { throw ValidationError("请先解锁私人空间。") }
+        let session = sessionID
+        let targets = items.filter { ids.contains($0.id) }
+        let folder = exportURL.appendingPathComponent(UUID().uuidString)
+        try fileManager.createDirectory(at: folder, withIntermediateDirectories: true,
+                                        attributes: [.protectionKey: FileProtectionType.complete])
+        var urls: [URL] = []
+        do {
+            for item in targets {
+                let source = mediaFileURL(for: item.id)
+                let originalExtension = URL(fileURLWithPath: item.originalName).pathExtension
+                let base = URL(fileURLWithPath: item.title).deletingPathExtension().lastPathComponent
+                let name = String(base.prefix(80)) + "-" + String(item.id.uuidString.prefix(8))
+                let output = folder.appendingPathComponent(name).appendingPathExtension(originalExtension)
+                let hash = try await VaultMediaFile.run { try VaultMediaFile.decrypt(source, to: output, key: keyData) }
+                if let expected = item.contentDigest, expected != hash { throw AppSecurityError.invalidCiphertext }
+                guard sessionID == session, isLoaded else { throw CancellationError() }
+                urls.append(output)
+            }
+            return urls
+        } catch {
+            try? fileManager.removeItem(at: folder)
+            throw error
+        }
     }
 
     func cleanupTemporaryExports() {
@@ -395,7 +586,13 @@ final class VaultStore: ObservableObject {
         }
         for album in payload.albums ?? [] { _ = try validAlbumName(album) }
         let existingIDs = Set(items.map(\.id))
-        let incoming = payload.items.filter { !existingIDs.contains($0.id) }
+        let incoming = payload.items.filter { !existingIDs.contains($0.id) }.map { item -> VaultItem in
+            var restored = item
+            restored.sourceIdentifier = nil
+            restored.originalState = .unknown
+            restored.originalCheckedAt = nil
+            return restored
+        }
         var written: [UUID] = []
         do {
             for item in incoming {
@@ -475,7 +672,8 @@ final class VaultStore: ObservableObject {
         }
     }
 
-    private func createVideoThumbnail(_ data: Data, id: UUID, key: Data) throws {
+    @discardableResult
+    private func createVideoThumbnail(_ data: Data, id: UUID, key: Data) throws -> Double? {
         let url = exportURL.appendingPathComponent("\(id.uuidString).mov")
         try protectedWrite(data, to: url)
         defer { try? fileManager.removeItem(at: url) }
@@ -488,6 +686,8 @@ final class VaultStore: ObservableObject {
            let thumbnail = UIImage(cgImage: frame).jpegData(compressionQuality: 0.82) {
             try protectedWrite(try CryptoBox.seal(thumbnail, using: key), to: thumbnailFileURL(for: id))
         }
+        let duration = CMTimeGetSeconds(asset.duration)
+        return duration.isFinite && duration > 0 ? duration : nil
     }
 
     private func capturedDate(from data: Data) -> Date? {

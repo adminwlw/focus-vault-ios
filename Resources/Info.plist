@@ -26,6 +26,8 @@
     <true/>
     <key>NSCameraUsageDescription</key>
     <string>用于将新拍摄的照片直接保存到私人空间。</string>
+    <key>NSFaceIDUsageDescription</key>
+    <string>仅在你主动使用快捷认证时，验证身份以进入私人空间。</string>
     <key>NSPhotoLibraryUsageDescription</key>
     <string>用于选择要导入的照片和视频，并在你确认后请求删除系统原件。</string>
     <key>UIApplicationSupportsIndirectInputEvents</key>
