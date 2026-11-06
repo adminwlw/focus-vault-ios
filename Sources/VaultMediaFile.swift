@@ -84,7 +84,7 @@ enum VaultMediaFile {
             let asset = AVURLAsset(url: url)
             guard asset.isPlayable else { throw ValidationError("视频无法播放，原件已保留。") }
             let seconds = CMTimeGetSeconds(asset.duration)
-            if seconds.isFinite, seconds > 0 { duration = seconds }
+            if seconds.isFinite, seconds > 0, seconds < Double(Int.max) { duration = seconds }
             let generator = AVAssetImageGenerator(asset: asset)
             generator.appliesPreferredTrackTransform = true
             generator.maximumSize = CGSize(width: 512, height: 512)

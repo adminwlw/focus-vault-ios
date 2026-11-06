@@ -17,64 +17,77 @@ struct VaultImportResultView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                Section {
-                    LabeledContent("新导入", value: "\(result.importedIDs.count) 项")
-                    LabeledContent("已存在，未重复保存", value: "\(result.duplicateIDs.count) 项")
-                    if result.cancelled { Text("导入已取消，成功项目已保留。未完成项目可重试。") }
-                    if let progress = store.importProgress {
-                        ProgressView("已处理 \(progress.completed) / \(progress.total) 项")
-                        Button("取消导入") { store.cancelImport() }
-                    }
-                    if store.retryCount > 0 {
-                        Button("重试未完成的 \(store.retryCount) 项") {
-                            Task { result = await store.retryImport() }
-                        }
-                        .accessibilityIdentifier("import-retry")
-                    }
-                } footer: { Text("加密副本已校验保存。已有的重复项目会直接复用；最近删除中的同一项目会恢复。") }
-                if !result.failures.isEmpty {
-                    Section("未完成") {
-                        ForEach(Array(result.failures.enumerated()), id: \.offset) { _, failure in
-                            Text(failure).font(.footnote)
-                        }
-                    }
-                }
-                Section("系统原件") {
-                    ForEach(resultItems) { item in
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(item.title).lineLimit(2)
-                            Text(item.originalStatus).font(.caption).foregroundStyle(.secondary)
-                        }
-                    }
-                    if !originalIDs.isEmpty {
-                        Button("删除系统照片中的原件", role: .destructive) { confirmDelete = true }
-                            .disabled(store.isBusy || deleting)
-                    }
-                    Button("保留系统原件") { dismiss() }
-                        .disabled(store.isBusy || deleting)
-                } footer: {
-                    Text("删除由 iOS 确认，可能影响 iCloud 其他设备；系统“最近删除”需要你自行核对。之后可在私人空间菜单“系统原件”查看上次处理结果。")
-                }
-            }
+            resultList
             .navigationTitle("导入结果")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() }.disabled(store.isBusy || deleting) } }
             .safeAreaInset(edge: .bottom) { VaultLockBar(onLock: onLock) }
             .confirmationDialog("删除这 \(originalIDs.count) 项系统原件？", isPresented: $confirmDelete, titleVisibility: .visible) {
                 Button("请求系统删除", role: .destructive) {
-                    let ids = originalIDs
-                    deleting = true
-                    Task {
-                        defer { deleting = false }
-                        do { try await store.deleteOriginals(for: ids); message = "系统删除请求已完成。请自行核对系统“最近删除”。" }
-                        catch { message = error.localizedDescription }
-                    }
+                    requestDeletion()
                 }
             } message: { Text("App 中的加密副本会保留，系统会处理权限和确认。") }
             .alert("处理结果", isPresented: Binding(get: { message != nil }, set: { if !$0 { message = nil } })) {
                 Button("好", role: .cancel) { message = nil }
             } message: { Text(message ?? "") }
+        }
+    }
+
+    private var resultList: some View {
+        List {
+            summarySection
+            if !result.failures.isEmpty {
+                Section("未完成") {
+                    ForEach(result.failures.indices, id: \.self) { index in
+                        Text(result.failures[index]).font(.footnote)
+                    }
+                }
+            }
+            originalsSection
+        }
+    }
+
+    private var summarySection: some View {
+        Section {
+            LabeledContent("新导入", value: "\(result.importedIDs.count) 项")
+            LabeledContent("已存在，未重复保存", value: "\(result.duplicateIDs.count) 项")
+            if result.cancelled { Text("导入已取消，成功项目已保留。未完成项目可重试。") }
+            if let progress = store.importProgress {
+                ProgressView("已处理 \(progress.completed) / \(progress.total) 项")
+                Button("取消导入") { store.cancelImport() }
+            }
+            if store.retryCount > 0 {
+                Button("重试未完成的 \(store.retryCount) 项") { Task { result = await store.retryImport() } }
+                    .accessibilityIdentifier("import-retry")
+            }
+        } footer: { Text("加密副本已校验保存。已有的重复项目会直接复用；最近删除中的同一项目会恢复。") }
+    }
+
+    private var originalsSection: some View {
+        Section {
+            ForEach(resultItems) { item in
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(item.title).lineLimit(2)
+                    Text(item.originalStatus).font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            if !originalIDs.isEmpty {
+                Button("删除系统照片中的原件", role: .destructive) { confirmDelete = true }
+                    .disabled(store.isBusy || deleting)
+            }
+            Button("保留系统原件") { dismiss() }.disabled(store.isBusy || deleting)
+        } header: { Text("系统原件") } footer: {
+            Text("删除由 iOS 确认，可能影响 iCloud 其他设备；系统“最近删除”需要你自行核对。之后可在私人空间菜单“系统原件”查看上次处理结果。")
+        }
+    }
+
+    private func requestDeletion() {
+        let ids = originalIDs
+        deleting = true
+        Task {
+            defer { deleting = false }
+            do { try await store.deleteOriginals(for: ids); message = "系统删除请求已完成。请自行核对系统“最近删除”。" }
+            catch { message = error.localizedDescription }
         }
     }
 }

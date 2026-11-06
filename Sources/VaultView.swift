@@ -150,7 +150,7 @@ struct VaultView: View {
                 .presentationDetents([.medium, .large])
             }
             .sheet(isPresented: $showAlbums) {
-                VaultAlbumsView { album in
+                VaultAlbumsView(onLock: onLock) { album in
                     selectedAlbum = album
                     favoritesOnly = false
                     mediaFilter = nil
@@ -604,6 +604,7 @@ private struct VaultAlbumsView: View {
     @State private var name = ""
     @State private var deletingAlbum: String?
     @State private var errorMessage: String?
+    let onLock: () -> Void
     let onSelect: (String?) -> Void
 
     var body: some View {
@@ -650,6 +651,7 @@ private struct VaultAlbumsView: View {
                 .accessibilityIdentifier("albums-create")
             }
             .navigationTitle("相册")
+            .safeAreaInset(edge: .bottom) { VaultLockBar(onLock: onLock) }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } }
             }

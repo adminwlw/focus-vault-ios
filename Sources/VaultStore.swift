@@ -283,7 +283,8 @@ final class VaultStore: ObservableObject {
             updated[index].originalState = .deletionSucceeded
             updated[index].originalCheckedAt = Date()
         }
-        try commit(updated, albums: albums)
+        do { try commit(updated, albums: albums) }
+        catch { throw ValidationError("系统已完成删除请求，但处理记录未能保存，请手动核对系统照片。") }
     }
 
     func checkOriginals() async throws {
@@ -321,8 +322,7 @@ final class VaultStore: ObservableObject {
         guard let data = image.jpegData(compressionQuality: 0.94) else {
             throw ValidationError("无法读取刚拍摄的照片。")
         }
-        let id = try importData(data, kind: .photo, originalName: "相机拍摄.jpg", capturedAt: Date(), album: album)
-        try update(id) { $0.originalState = .notInLibrary; $0.originalCheckedAt = Date() }
+        try importData(data, kind: .photo, originalName: "相机拍摄.jpg", capturedAt: Date(), album: album, originalState: .notInLibrary)
     }
 
     @discardableResult
@@ -331,7 +331,8 @@ final class VaultStore: ObservableObject {
         kind: VaultMediaKind,
         originalName: String,
         capturedAt: Date? = nil,
-        album: String? = nil
+        album: String? = nil,
+        originalState: OriginalState? = nil
     ) throws -> UUID {
         guard let keyData else { throw ValidationError("私人空间尚未解锁。") }
         guard !data.isEmpty else { throw ValidationError("导入项目为空。") }
@@ -347,7 +348,9 @@ final class VaultStore: ObservableObject {
             albumName: album,
             isFavorite: false,
             deletedAt: nil,
-            contentDigest: SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+            contentDigest: SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined(),
+            originalState: originalState,
+            originalCheckedAt: originalState == nil ? nil : Date()
         )
         let encrypted = try CryptoBox.seal(data, using: keyData)
         let mediaFile = mediaFileURL(for: item.id)

@@ -37,14 +37,14 @@ enum BiometricVaultKey {
             let context = LAContext()
             context.localizedCancelTitle = "取消"
             context.localizedFallbackTitle = ""
+            context.localizedReason = "认证以打开私人空间"
             let query: [String: Any] = [
                 kSecClass as String: kSecClassGenericPassword,
                 kSecAttrService as String: service,
                 kSecAttrAccount as String: account,
                 kSecReturnData as String: true,
                 kSecMatchLimit as String: kSecMatchLimitOne,
-                kSecUseAuthenticationContext as String: context,
-                kSecUseOperationPrompt as String: "认证以打开私人空间"
+                kSecUseAuthenticationContext as String: context
             ]
             var result: CFTypeRef?
             let status = SecItemCopyMatching(query as CFDictionary, &result)

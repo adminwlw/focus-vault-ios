@@ -67,7 +67,8 @@ struct VaultItem: Codable, Identifiable, Hashable, Sendable {
     }
     var remainingTrashDays: Int {
         guard let deletedAt else { return 30 }
-        return max(0, Int(ceil(deletedAt.addingTimeInterval(30 * 86_400).timeIntervalSinceNow / 86_400)))
+        let days = ceil(deletedAt.addingTimeInterval(30 * 86_400).timeIntervalSinceNow / 86_400)
+        return days.isFinite ? Int(max(0, min(30, days))) : 0
     }
 }
 
